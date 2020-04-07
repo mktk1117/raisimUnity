@@ -738,7 +738,7 @@ namespace raisimUnity
                     {
                         var planeVis = _objectController.CreateHalfSpace(objFrame, height);
                         planeVis.GetComponentInChildren<Renderer>().material = material;
-                        planeVis.GetComponentInChildren<Renderer>().material.mainTextureScale = new Vector2(5, 5);
+                        planeVis.GetComponentInChildren<Renderer>().material.mainTextureScale = new Vector2(100, 100);
                         planeVis.tag = VisualTag.Visual;
                     }
                 }
@@ -1062,7 +1062,9 @@ namespace raisimUnity
 
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType != ServerMessageType.ObjectPositionUpdate)
-                throw new RsuUpdateObjectsPositionException("Server gives wrong message");
+            {
+                return;
+            }
             
             ulong configurationNumber = _tcpHelper.GetDataUlong();
             if (configurationNumber != _objectConfiguration)
@@ -1267,6 +1269,7 @@ namespace raisimUnity
             }
 
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
+            return; // No XML
             if (messageType == ServerMessageType.NoMessage) return; // No XML
                 
             if (messageType != ServerMessageType.ConfigXml)
@@ -1277,11 +1280,11 @@ namespace raisimUnity
             string xmlString = _tcpHelper.GetDataString();
 
             XmlDocument xmlDoc = new XmlDocument();
-            if (xmlDoc != null)
-            {
-                xmlDoc.LoadXml(xmlString);
-                _xmlReader.CreateApperanceMap(xmlDoc);
-            }
+            // if (xmlDoc != null)
+            // {
+            //     xmlDoc.LoadXml(xmlString);
+            //     _xmlReader.CreateApperanceMap(xmlDoc);
+            // }
         }
 
         void OnApplicationQuit()

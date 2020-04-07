@@ -65,7 +65,7 @@ namespace raisimUnity
         public void CreateApperanceMap(XmlDocument xmlDocument)
         {
             // find appearance element under object
-            var objects = xmlDocument.DocumentElement.SelectSingleNode("/raisim/world/objects");
+            var objects = xmlDocument.DocumentElement.SelectSingleNode("/raisim/objects");
 
             foreach (XmlNode obj in objects.ChildNodes)
             {

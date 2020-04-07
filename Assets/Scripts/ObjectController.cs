@@ -145,7 +145,7 @@ namespace raisimUnity
             var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
             plane.transform.SetParent(root.transform, true);
             plane.transform.localPosition = new Vector3(0, height, 0);
-            plane.transform.localScale = new Vector3(5, 1, 5);
+            plane.transform.localScale = new Vector3(50, 1, 50);
             GameObject.DestroyImmediate(plane.GetComponent<Collider>());
             return plane;
         }
