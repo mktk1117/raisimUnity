@@ -145,7 +145,7 @@ namespace raisimUnity
             var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
             plane.transform.SetParent(root.transform, true);
             plane.transform.localPosition = new Vector3(0, height, 0);
-            plane.transform.localScale = new Vector3(50, 1, 50);
+            plane.transform.localScale = new Vector3(30, 1, 30);
             GameObject.DestroyImmediate(plane.GetComponent<Collider>());
             return plane;
         }
@@ -376,7 +376,13 @@ namespace raisimUnity
                 mesh.transform.localRotation = new Quaternion(-0.7071f, 0, 0, 0.7071f) * mesh.transform.localRotation;
             else if(cachedMesh.Item2 == MeshUpAxis.XUp)
                 mesh.transform.localRotation = new Quaternion(0, 0, 0.7071f, 0.7071f) * mesh.transform.localRotation;
-
+            
+            // add collider to children
+            foreach (Transform children in mesh.transform)
+            {
+                children.gameObject.AddComponent<MeshCollider>();
+            }
+            
             return mesh;
         }
 
