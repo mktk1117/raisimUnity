@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: WispySkyboxMat
-  m_Shader: {fileID: 106, guid: 0000000000000000f000000000000000, type: 0}
+  m_Shader: {fileID: 104, guid: 0000000000000000f000000000000000, type: 0}
   m_ShaderKeywords: _MAPPING_LATITUDE_LONGITUDE_LAYOUT _SUNDISK_HIGH_QUALITY
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 0
@@ -20,19 +20,19 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BackTex:
-        m_Texture: {fileID: 2800000, guid: d6d8ef656544dfc4d855e70eaa8a12d6, type: 3}
+        m_Texture: {fileID: 2800000, guid: 27baf6657472b9d68b8ba0bfcd0c7e9f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DownTex:
-        m_Texture: {fileID: 2800000, guid: 84db52690e0e44746957a79f52453f08, type: 3}
+        m_Texture: {fileID: 2800000, guid: 79a8fc3f81e1880cf866060b5182070f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _FrontTex:
-        m_Texture: {fileID: 2800000, guid: c960b40f11e80ba42876945d466a4ede, type: 3}
+        m_Texture: {fileID: 2800000, guid: 6422c600018be0a51895603dee75c336, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _LeftTex:
-        m_Texture: {fileID: 2800000, guid: 45fa88018c5ac004587ad6b4ad43b449, type: 3}
+        m_Texture: {fileID: 2800000, guid: dd7332201b1c2cd299d5beccdc0e9ed4, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -40,11 +40,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RightTex:
-        m_Texture: {fileID: 2800000, guid: aacee15d93143e14dbbd6be89a785e46, type: 3}
+        m_Texture: {fileID: 2800000, guid: 9a0d8f2dea47de663bdce88ce1518af0, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _UpTex:
-        m_Texture: {fileID: 2800000, guid: 813b8464c36e87d44b5c1a742bfb01d1, type: 3}
+        m_Texture: {fileID: 2800000, guid: ad1f1cb180eb4861eb80bd8ae98f497e, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:

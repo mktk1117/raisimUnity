@@ -230,6 +230,7 @@ namespace raisimUnity
                 _sunsetSky = Resources.Load<Material>("backgrounds/Skybox/Materials/Skybox_Sunset");
                 _nightSky = Resources.Load<Material>("backgrounds/FreeNightSky/Materials/nightsky1");
                 _milkywaySky = Resources.Load<Material>("backgrounds/MilkyWay/Material/MilkyWay");
+                RenderSettings.skybox=_daySky;
 
                 var backgroundDropdown = GameObject.Find(_DropdownBackgroundName).GetComponent<Dropdown>();
                 backgroundDropdown.onValueChanged.AddListener(delegate {
