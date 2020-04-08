@@ -224,6 +224,23 @@ public class CameraController : MonoBehaviour
                 _anchorRot = transform.rotation;
             }
             
+            // Set anchor for orbiting around selected object  
+            if (Input.GetAxis("Mouse ScrollWheel") > 0f  && _selected != null)
+            {
+                Vector3 move = Vector3.zero;
+                move += Vector3.forward * _relativePositionB.magnitude;
+                move.Scale(new Vector3(0.15f, 0.15f, 0.15f));
+                _relativePositionB += move;
+            }
+            
+            if (Input.GetAxis("Mouse ScrollWheel") < 0f  && _selected != null)
+            {
+                Vector3 move = Vector3.zero;
+                move -= Vector3.forward * _relativePositionB.magnitude;
+                move.Scale(new Vector3(0.15f, 0.15f, 0.15f));
+                _relativePositionB += move;
+            }
+            
             if (Input.GetMouseButton(0) && _selected != null)
             {
                 Quaternion rot = _anchorRot;

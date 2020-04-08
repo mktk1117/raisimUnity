@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MIT License
  * 
  * Copyright (c) 2019, Dongho Kang, Robotics Systems Lab, ETH Zurich

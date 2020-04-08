@@ -81,10 +81,67 @@ namespace raisimUnity
             var grandParent = Directory.GetParent(parent).FullName;            // .../rsc/robot
 
             var curr = Path.GetFileName(meshDirPathInServer);                 // urdf
+
+            // 1. current directory
+            {
+                var meshPath = Path.Combine(meshDirPathInServer, meshName);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
+            
+            // 2. current + meshes + directory
+            {
+                var meshPath = Path.Combine(meshDirPathInServer, "meshes", meshName);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
+            
+            // 3. current + mesh + directory
+            {
+                var meshPath = Path.Combine(meshDirPathInServer, "mesh", meshName);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
+            
+            // 4. upper directory
+            {
+                var meshPath = Path.Combine(parent, meshName);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
+            
+            // 5. meshes directory
+            {
+                var meshPath = Path.Combine(parent, "meshes", meshName);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
+            
+            // 6. mesh directory
+            {
+                var meshPath = Path.Combine(parent, "mesh", meshName);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
+            
+            // checking in the resource directories
+            
             parent = Path.GetFileName(parent);                                // alma    
             grandParent = Path.GetFileName(grandParent);                      // robot
 
-            // 1. check from grand parent
+            // 7. check from grand parent
             //
             // e.g.
             // meshDirPathInServer: .../rsc/robot/alma/urdf/
@@ -100,7 +157,7 @@ namespace raisimUnity
                 }
             }
             
-            // 2. check from parent 
+            // 8. check from parent 
             //
             // e.g.
             // meshDirPathInServer: .../rsc/alma/urdf/
@@ -116,7 +173,7 @@ namespace raisimUnity
                 }
             }
             
-            // 3. check from curr 
+            // 9. check from curr 
             //
             // e.g.
             // meshDirPathInServer: .../rsc/anymal/
