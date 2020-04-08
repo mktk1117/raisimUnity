@@ -1270,6 +1270,8 @@ namespace raisimUnity
 
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             return; // No XML
+            
+            //TODO: properly use xml file here
             if (messageType == ServerMessageType.NoMessage) return; // No XML
                 
             if (messageType != ServerMessageType.ConfigXml)

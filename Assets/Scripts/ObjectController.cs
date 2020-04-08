@@ -318,7 +318,7 @@ namespace raisimUnity
             // sx, sy, sz is scale 
             MeshUpAxis meshUpAxis = MeshUpAxis.YUp;
             GameObject mesh = null;
-            
+
             if (_meshCache.ContainsKey(meshFile) && _meshCache[meshFile] != null) {}
             else
             {
@@ -330,7 +330,7 @@ namespace raisimUnity
                 string fileExtension = Path.GetExtension(meshFile);
                 var loadedMesh = MeshImporter.Load(meshFile);
                 
-                // check up axis (for dae) 
+                // check up axis (for dae)
                 if (fileExtension == ".dae")
                 {
                     XmlDocument xmlDoc = new XmlDocument();
@@ -368,20 +368,15 @@ namespace raisimUnity
             mesh.SetActive(true);
             mesh.name = "mesh";
             mesh.transform.SetParent(root.transform, false);
-            mesh.transform.localScale = new Vector3((float)sx, (float)sy, (float)sz);
+            Vector3 originalScale = mesh.transform.localScale;
+            mesh.transform.localScale = new Vector3((float)sx * originalScale[0], (float)sy * originalScale[1], (float)sz * originalScale[2]);
             
             if(cachedMesh.Item2 == MeshUpAxis.ZUp) {}
             else if(cachedMesh.Item2 == MeshUpAxis.YUp)
                 mesh.transform.localRotation = new Quaternion(-0.7071f, 0, 0, 0.7071f) * mesh.transform.localRotation;
             else if(cachedMesh.Item2 == MeshUpAxis.XUp)
                 mesh.transform.localRotation = new Quaternion(0, 0, 0.7071f, 0.7071f) * mesh.transform.localRotation;
-            
-            // add collider to children
-            foreach (Transform children in mesh.transform)
-            {
-                children.gameObject.AddComponent<MeshCollider>();
-            }
-            
+
             return mesh;
         }
 

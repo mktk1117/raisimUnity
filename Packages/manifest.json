@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.donghok.meshimporter": "https://github.com/eastskykang/UnityMeshImporter.git#09da4018e42dc2e976867cfb62f60af7ab96fa3b",
+    "com.donghok.meshimporter": "https://github.com/raisim/UnityMeshImporter.git#09da4018e42dc2e976867cfb62f60af7ab96fa3b",
     "com.unity.collab-proxy": "1.2.16",
     "com.unity.ext.nunit": "1.0.0",
     "com.unity.ide.rider": "1.1.4",
