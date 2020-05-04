@@ -396,12 +396,12 @@ public class CameraController : MonoBehaviour
                      Application.platform == RuntimePlatform.OSXPlayer)
             {
                 // Mac
-                throw new NotImplementedException();
+                return -1;
             }
             else
             {
                 // Else...
-                throw new NotImplementedException();
+                return -1;
             }
 
             ffmpegProc.StartInfo.UseShellExecute = false;
