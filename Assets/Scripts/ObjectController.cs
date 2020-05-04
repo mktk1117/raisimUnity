@@ -324,7 +324,7 @@ namespace raisimUnity
             {
                 if (!File.Exists(meshFile))
                 {
-                    throw new RsuResourceException("Cannot find mesh file: " + meshFile);
+                    new RsuException(new Exception(),"Cannot find mesh file: " + meshFile);
                 }
 
                 string fileExtension = Path.GetExtension(meshFile);
@@ -362,7 +362,7 @@ namespace raisimUnity
             mesh = GameObject.Instantiate(cachedMesh.Item1);
             if (mesh == null)
             {
-                throw new RsuResourceException("Cannot load mesh file: " + meshFile);
+                new RsuException(new Exception(),"Cannot load mesh file: " + meshFile);
             }
             
             mesh.SetActive(true);

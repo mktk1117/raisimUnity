@@ -74,7 +74,7 @@ namespace raisimUnity
             catch (Exception e)
             {
                 // connection cannot be established
-                throw new RsuTcpConnectionException(e.Message);
+                new RsuException(e);
             }
         }
         
@@ -97,6 +97,7 @@ namespace raisimUnity
             }
             catch (Exception e)
             {
+                new RsuException(e);
             }
         }
         
@@ -119,8 +120,9 @@ namespace raisimUnity
                 else
                     return false;
             }
-            catch
+            catch (Exception e)
             {
+                new RsuException(e);
                 return false;
             }
         }
@@ -143,10 +145,17 @@ namespace raisimUnity
             Byte footer = Convert.ToByte('c');
             while (footer == Convert.ToByte('c'))
             {
-                int valread = _stream.Read(_buffer, numBytes, MaxPacketSize);
-                if (valread == 0) break;
-                footer = _buffer[numBytes + MaxPacketSize - FooterSize];
-                numBytes += valread - FooterSize;
+                _buffer[numBytes + MaxPacketSize - FooterSize] = Convert.ToByte('c');
+                int valread = 0;
+
+                while (valread < MaxPacketSize)
+                {
+                    valread += _stream.Read(_buffer, numBytes, MaxPacketSize);
+                    numBytes += valread;
+                }
+                
+                footer = _buffer[numBytes - FooterSize];
+                numBytes -= FooterSize;
             }
 
             _bufferOffset = 0;

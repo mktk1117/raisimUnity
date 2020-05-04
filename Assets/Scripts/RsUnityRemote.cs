@@ -237,19 +237,28 @@ namespace raisimUnity
                         //**********************************************************************************************
                         case ClientStatus.Idle:
                         {
-                            // Server hibernating
-                            ClearScene();
-
-                            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestServerStatus));
-                            if (_tcpHelper.ReadData() <= 0)
-                                throw new RsuIdleException("Cannot read data from TCP");
-                            
-                            ServerStatus state = _tcpHelper.GetDataServerStatus();
-                            if (state == ServerStatus.StatusRendering)
+                            try
                             {
-                                // Go to InitializeObjectsStart
-                                _clientStatus = ClientStatus.InitializeObjectsStart;
+                                // Server hibernating
+                                ClearScene();
+
+                                _tcpHelper.WriteData(
+                                    BitConverter.GetBytes((int) ClientMessageType.RequestServerStatus));
+                                if (_tcpHelper.ReadData() <= 0)
+                                    new RsuException(new Exception(), "Cannot read data from TCP");
+
+                                ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                if (state == ServerStatus.StatusRendering)
+                                {
+                                    // Go to InitializeObjectsStart
+                                    _clientStatus = ClientStatus.InitializeObjectsStart;
+                                }
                             }
+                            catch (Exception e)
+                            {
+                                new RsuException(e);
+                            }
+                            
                             break;
                         }
                         //**********************************************************************************************
@@ -257,36 +266,43 @@ namespace raisimUnity
                         //**********************************************************************************************
                         case ClientStatus.InitializeObjectsStart:
                         {
-                            _loadingModalView.Show(true);
-                            _loadingModalView.SetTitle("Initializing RaiSim Objects");
-                            _loadingModalView.SetMessage("Loading resources...");
-                            _loadingModalView.SetProgress(0);
-
-                            // Read XML string
-                            ReadXmlString();
-                            
-                            // Start initialization
-                            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
-                            if (_tcpHelper.ReadData() <= 0)
-                                throw new RsuInitObjectsException("Cannot read data from TCP");
-
-                            ServerStatus state = _tcpHelper.GetDataServerStatus();
-                            if (state == ServerStatus.StatusTerminating)
-                                throw new RsuInitObjectsException("Server is terminating");
-                            else if (state == ServerStatus.StatusHibernating)
+                            try
                             {
-                                _clientStatus = ClientStatus.Idle;
-                                return;
+                                _loadingModalView.Show(true);
+                                _loadingModalView.SetTitle("Initializing RaiSim Objects");
+                                _loadingModalView.SetMessage("Loading resources...");
+                                _loadingModalView.SetProgress(0);
+
+                                // Read XML string
+                                ReadXmlString();
+                            
+                                // Start initialization
+                                _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
+                                if (_tcpHelper.ReadData() <= 0)
+                                    new RsuException(new Exception(), "Cannot read data from TCP");
+
+                                ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                if (state == ServerStatus.StatusTerminating)
+                                    new RsuException(new Exception(), "Server is terminating");
+                                else if (state == ServerStatus.StatusHibernating)
+                                {
+                                    _clientStatus = ClientStatus.Idle;
+                                    return;
+                                }
+
+                                ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
+                                if (messageType != ServerMessageType.Initialization)
+                                    new RsuException(new Exception(), "Server gives wrong message");
+
+                                _objectConfiguration = _tcpHelper.GetDataUlong();
+                                _numWorldObjects = _tcpHelper.GetDataUlong();
+                                _numInitializedObjects = 0;
+                                _clientStatus = ClientStatus.InitializingObjects;
+                            } catch (Exception e)
+                            {
+                                new RsuException(e);
                             }
-
-                            ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-                            if (messageType != ServerMessageType.Initialization)
-                                throw new RsuInitObjectsException("Server gives wrong message");
-
-                            _objectConfiguration = _tcpHelper.GetDataUlong();
-                            _numWorldObjects = _tcpHelper.GetDataUlong();
-                            _numInitializedObjects = 0;
-                            _clientStatus = ClientStatus.InitializingObjects;
+                            
                             break;
                         }
                         //**********************************************************************************************
@@ -294,23 +310,30 @@ namespace raisimUnity
                         //**********************************************************************************************
                         case ClientStatus.InitializingObjects:
                         {
-                            if (_numInitializedObjects < _numWorldObjects)
+                            try
                             {
-                                // Initialize objects from data
-                                // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
-                                PartiallyInitializeObjects();
-                                _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);
-                            }
-                            else if (_numInitializedObjects == _numWorldObjects)
+                                if (_numInitializedObjects < _numWorldObjects)
+                                {
+                                    // Initialize objects from data
+                                    // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
+                                    PartiallyInitializeObjects();
+                                    _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);
+                                }
+                                else if (_numInitializedObjects == _numWorldObjects)
+                                {
+                                    // Initialization done 
+                                    _loadingModalView.Show(false);
+                                    _clientStatus = ClientStatus.InitializeVisualsStart;
+                                }
+                                else
+                                {
+                                    // TODO error
+                                } 
+                            } catch (Exception e)
                             {
-                                // Initialization done 
-                                _loadingModalView.Show(false);
-                                _clientStatus = ClientStatus.InitializeVisualsStart;
+                                new RsuException(e);
                             }
-                            else
-                            {
-                                // TODO error
-                            }
+                            
 
                             break;
                         }
@@ -319,33 +342,40 @@ namespace raisimUnity
                         //**********************************************************************************************
                         case ClientStatus.InitializeVisualsStart:
                         {
-                            _loadingModalView.Show(true);
-                            _loadingModalView.SetTitle("Initializing Visuals");
-                            _loadingModalView.SetMessage("Loading resources...");
-                            _loadingModalView.SetProgress(0);
-                            
-                            // Start initialization
-                            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeVisuals));
-                            if (_tcpHelper.ReadData() <= 0)
-                                throw new RsuInitVisualsException("Cannot read data from TCP");
-
-                            ServerStatus state = _tcpHelper.GetDataServerStatus();
-                            if (state == ServerStatus.StatusTerminating)
-                                throw new RsuInitVisualsException("Server is terminating");
-                            else if (state == ServerStatus.StatusHibernating)
+                            try
                             {
-                                _clientStatus = ClientStatus.Idle;
-                                return;
+                                _loadingModalView.Show(true);
+                                _loadingModalView.SetTitle("Initializing Visuals");
+                                _loadingModalView.SetMessage("Loading resources...");
+                                _loadingModalView.SetProgress(0);
+                            
+                                // Start initialization
+                                _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeVisuals));
+                                if (_tcpHelper.ReadData() <= 0)
+                                    new RsuException(new Exception(),"Cannot read data from TCP");
+
+                                ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                if (state == ServerStatus.StatusTerminating)
+                                    new RsuException(new Exception(),"Server is terminating");
+                                else if (state == ServerStatus.StatusHibernating)
+                                {
+                                    _clientStatus = ClientStatus.Idle;
+                                    return;
+                                }
+
+                                ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
+                                if (messageType != ServerMessageType.VisualInitialization)
+                                    new RsuException(new Exception(),"Server gives wrong message");
+
+                                _visualConfiguration = _tcpHelper.GetDataUlong();
+                                _numWorldVisuals = _tcpHelper.GetDataUlong();
+                                _numInitializedVisuals = 0;
+                                _clientStatus = ClientStatus.InitializingVisuals;
+                                break;
+                            } catch (Exception e)
+                            {
+                                new RsuException(e);
                             }
-
-                            ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-                            if (messageType != ServerMessageType.VisualInitialization)
-                                throw new RsuInitVisualsException("Server gives wrong message");
-
-                            _visualConfiguration = _tcpHelper.GetDataUlong();
-                            _numWorldVisuals = _tcpHelper.GetDataUlong();
-                            _numInitializedVisuals = 0;
-                            _clientStatus = ClientStatus.InitializingVisuals;
                             break;
                         }
                         //**********************************************************************************************
@@ -353,34 +383,41 @@ namespace raisimUnity
                         //**********************************************************************************************
                         case ClientStatus.InitializingVisuals:
                         {
-                            if (_numInitializedVisuals < _numWorldVisuals)
+                            try
                             {
-                                // Initialize visuals from data
-                                // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
-                                PartiallyInitializeVisuals();
-                                _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);
-                            }
-                            else if (_numInitializedVisuals == _numWorldVisuals)
-                            {
-                                // Initialization done 
-                                _loadingModalView.Show(false);
-                                
-                                // Disable other cameras than main camera
-                                foreach (var cam in Camera.allCameras)
+                                if (_numInitializedVisuals < _numWorldVisuals)
                                 {
-                                    if (cam == Camera.main) continue;
-                                    cam.enabled = false;
+                                    // Initialize visuals from data
+                                    // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
+                                    PartiallyInitializeVisuals();
+                                    _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);
                                 }
-
-                                // Show / hide objects
-                                ShowOrHideObjects();
+                                else if (_numInitializedVisuals == _numWorldVisuals)
+                                {
+                                    // Initialization done 
+                                    _loadingModalView.Show(false);
                                 
-                                _clientStatus = ClientStatus.UpdateObjectPosition;
-                            }
-                            else
+                                    // Disable other cameras than main camera
+                                    foreach (var cam in Camera.allCameras)
+                                    {
+                                        if (cam == Camera.main) continue;
+                                        cam.enabled = false;
+                                    }
+
+                                    // Show / hide objects
+                                    ShowOrHideObjects();
+                                
+                                    _clientStatus = ClientStatus.UpdateObjectPosition;
+                                }
+                                else
+                                {
+                                    throw new Exception();
+                                }
+                            } catch (Exception e)
                             {
-                                // TODO error
+                                new RsuException(e);
                             }
+                            
                             break;
                         }
                         //**********************************************************************************************
@@ -388,73 +425,94 @@ namespace raisimUnity
                         //**********************************************************************************************
                         case ClientStatus.UpdateObjectPosition:
                         {
-                            // update object position
-                            UpdateObjectsPosition();
+                            try
+                            {
+                                // update object position
+                                UpdateObjectsPosition();
                             
-                            // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
-                            // Else clientStatus is updated to UpdateVisualPosition
+                                // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
+                                // Else clientStatus is updated to UpdateVisualPosition
+                            } catch (Exception e)
+                            {
+                                new RsuException(e);
+                            }
+
                             break;
                         }
                         case ClientStatus.ReinitializeObjectsStart:
                         {
-                            // If server side has been changed, initialize objects
-                            // Clear objects first
-                            foreach (Transform objT in _objectsRoot.transform)
+                            try
                             {
-                                Destroy(objT.gameObject);
+                                // If server side has been changed, initialize objects
+                                // Clear objects first
+                                foreach (Transform objT in _objectsRoot.transform)
+                                {
+                                    Destroy(objT.gameObject);
+                                }
+                            
+                                // Start reinitializing
+                                _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
+                                if (_tcpHelper.ReadData() <= 0)
+                                    new RsuException(new Exception(), "Cannot read data from TCP");
+
+                                ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                if (state == ServerStatus.StatusTerminating)
+                                    new RsuException(new Exception(), "Server is terminating");
+                                else if (state == ServerStatus.StatusHibernating)
+                                {
+                                    _clientStatus = ClientStatus.Idle;
+                                    return;
+                                }
+
+                                ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
+                                if (messageType != ServerMessageType.Initialization)
+                                    new RsuException(new Exception(),"Server gives wrong message");
+
+                                _objectConfiguration = _tcpHelper.GetDataUlong();
+                                _numWorldObjects = _tcpHelper.GetDataUlong();
+                                _numInitializedObjects = 0;
+                                _clientStatus = ClientStatus.ReinitializingObjects;
+                            } catch (Exception e)
+                            {
+                                new RsuException(e);
                             }
                             
-                            // Start reinitializing
-                            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
-                            if (_tcpHelper.ReadData() <= 0)
-                                throw new RsuInitObjectsException("Cannot read data from TCP");
-
-                            ServerStatus state = _tcpHelper.GetDataServerStatus();
-                            if (state == ServerStatus.StatusTerminating)
-                                throw new RsuInitObjectsException("Server is terminating");
-                            else if (state == ServerStatus.StatusHibernating)
-                            {
-                                _clientStatus = ClientStatus.Idle;
-                                return;
-                            }
-
-                            ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-                            if (messageType != ServerMessageType.Initialization)
-                                throw new RsuInitObjectsException("Server gives wrong message");
-
-                            _objectConfiguration = _tcpHelper.GetDataUlong();
-                            _numWorldObjects = _tcpHelper.GetDataUlong();
-                            _numInitializedObjects = 0;
-                            _clientStatus = ClientStatus.ReinitializingObjects;
                             break;
                         }
                         case ClientStatus.ReinitializingObjects:
                         {
-                            if (_numInitializedObjects < _numWorldObjects)
+                            try
                             {
-                                // Reinitialize objects from data
-                                // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
-                                PartiallyInitializeObjects();
-                            }
-                            else if (_numInitializedObjects == _numWorldObjects)
-                            {
-                                // Reinitialization done 
-                                _clientStatus = ClientStatus.UpdateObjectPosition;
-                                
-                                // Disable other cameras than main camera
-                                foreach (var cam in Camera.allCameras)
+                                if (_numInitializedObjects < _numWorldObjects)
                                 {
-                                    if (cam == Camera.main) continue;
-                                    cam.enabled = false;
+                                    // Reinitialize objects from data
+                                    // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
+                                    PartiallyInitializeObjects();
                                 }
+                                else if (_numInitializedObjects == _numWorldObjects)
+                                {
+                                    // Reinitialization done 
+                                    _clientStatus = ClientStatus.UpdateObjectPosition;
+                                
+                                    // Disable other cameras than main camera
+                                    foreach (var cam in Camera.allCameras)
+                                    {
+                                        if (cam == Camera.main) continue;
+                                        cam.enabled = false;
+                                    }
 
-                                // Show / hide objects
-                                ShowOrHideObjects();
-                            }
-                            else
+                                    // Show / hide objects
+                                    ShowOrHideObjects();
+                                }
+                                else
+                                {
+                                    throw new Exception();
+                                }
+                            } catch (Exception e)
                             {
-                                // TODO error
+                                new RsuException(e);
                             }
+                            
 
                             break;
                         }
@@ -463,76 +521,97 @@ namespace raisimUnity
                         //**********************************************************************************************
                         case ClientStatus.UpdateVisualPosition:
                         {
-                            // Update visuals
-                            UpdateVisualsPosition();
+                            try
+                            {
+                                // Update visuals
+                                UpdateVisualsPosition();
                         
-                            // Update contacts
-                            UpdateContacts();
+                                // Update contacts
+                                UpdateContacts();
                             
-                            // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeVisualsStart  
-                            // Else clientStatus is updated to UpdateObjectPosition
+                                // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeVisualsStart  
+                                // Else clientStatus is updated to UpdateObjectPosition
+                            } catch (Exception e)
+                            {
+                                new RsuException(e);
+                            }
+
                             break;
                         }
                         case ClientStatus.ReinitializeVisualsStart:
                         {
-                            // If server side has been changed, initialize visuals
-                            // Clear visuals first
-                            foreach (Transform objT in _visualsRoot.transform)
+                            try
                             {
-                                Destroy(objT.gameObject);
-                            }
+                                
+                                // If server side has been changed, initialize visuals
+                                // Clear visuals first
+                                foreach (Transform objT in _visualsRoot.transform)
+                                {
+                                    Destroy(objT.gameObject);
+                                }
                             
-                            // Start reinitializing
-                            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeVisuals));
-                            if (_tcpHelper.ReadData() <= 0)
-                                throw new RsuInitVisualsException("Cannot read data from TCP");
+                                // Start reinitializing
+                                _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeVisuals));
+                                if (_tcpHelper.ReadData() <= 0)
+                                    new RsuException(new Exception(),"Cannot read data from TCP");
 
-                            ServerStatus state = _tcpHelper.GetDataServerStatus();
-                            if (state == ServerStatus.StatusTerminating)
-                                throw new RsuInitVisualsException("Server is terminating");
-                            else if (state == ServerStatus.StatusHibernating)
+                                ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                if (state == ServerStatus.StatusTerminating)
+                                    new RsuException(new Exception(),"Server is terminating");
+                                else if (state == ServerStatus.StatusHibernating)
+                                {
+                                    _clientStatus = ClientStatus.Idle;
+                                    return;
+                                }
+
+                                ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
+                                if (messageType != ServerMessageType.VisualInitialization)
+                                    new RsuException(new Exception(),"Server gives wrong message");
+
+                                _visualConfiguration = _tcpHelper.GetDataUlong();
+                                _numWorldVisuals = _tcpHelper.GetDataUlong();
+                                _numInitializedVisuals = 0;
+                                _clientStatus = ClientStatus.ReinitializingVisuals;
+                            } catch (Exception e)
                             {
-                                _clientStatus = ClientStatus.Idle;
-                                return;
+                                new RsuException(e);
                             }
-
-                            ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-                            if (messageType != ServerMessageType.VisualInitialization)
-                                throw new RsuInitVisualsException("Server gives wrong message");
-
-                            _visualConfiguration = _tcpHelper.GetDataUlong();
-                            _numWorldVisuals = _tcpHelper.GetDataUlong();
-                            _numInitializedVisuals = 0;
-                            _clientStatus = ClientStatus.ReinitializingVisuals;
                             break;
                         }
                         case ClientStatus.ReinitializingVisuals:
                         {
-                            if (_numInitializedVisuals < _numWorldVisuals)
+                            try
                             {
-                                // Reinitialize objects from data
-                                // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
-                                PartiallyInitializeVisuals();
-                            }
-                            else if (_numInitializedVisuals == _numWorldVisuals)
-                            {
-                                // Reinitialization done 
-                                _clientStatus = ClientStatus.UpdateVisualPosition;
-                                
-                                // Disable other cameras than main camera
-                                foreach (var cam in Camera.allCameras)
+                                if (_numInitializedVisuals < _numWorldVisuals)
                                 {
-                                    if (cam == Camera.main) continue;
-                                    cam.enabled = false;
+                                    // Reinitialize objects from data
+                                    // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
+                                    PartiallyInitializeVisuals();
                                 }
+                                else if (_numInitializedVisuals == _numWorldVisuals)
+                                {
+                                    // Reinitialization done 
+                                    _clientStatus = ClientStatus.UpdateVisualPosition;
+                                
+                                    // Disable other cameras than main camera
+                                    foreach (var cam in Camera.allCameras)
+                                    {
+                                        if (cam == Camera.main) continue;
+                                        cam.enabled = false;
+                                    }
 
-                                // Show / hide objects
-                                ShowOrHideObjects();
-                            }
-                            else
+                                    // Show / hide objects
+                                    ShowOrHideObjects();
+                                }
+                                else
+                                {
+                                    throw new Exception();
+                                }
+                            } catch (Exception e)
                             {
-                                // TODO error
+                                new RsuException(e);
                             }
+                            
 
                             break;
                         }
@@ -650,7 +729,7 @@ namespace raisimUnity
                                 string meshFilePathInResourceDir = _loader.RetrieveMeshPath(urdfDirPathInServer, meshFile);
                                 if (meshFilePathInResourceDir == null)
                                 {
-                                    throw new RsuInitObjectsException("Cannot find mesh from resource directories = " + meshFile);
+                                    new RsuException(new Exception(),"Cannot find mesh from resource directories = " + meshFile);
                                 }
 
                                 try
@@ -660,7 +739,7 @@ namespace raisimUnity
                                 }
                                 catch (Exception e)
                                 {
-                                    throw new RsuInitObjectsException("Cannot create mesh: " + e.Message);
+                                    new RsuException(new Exception(),"Cannot create mesh: " + e.Message);
                                     throw;
                                 }
                             }
@@ -678,14 +757,14 @@ namespace raisimUnity
                                 {
                                     case RsShapeType.RsBoxShape:
                                     {
-                                        if (visParam.Count != 3) throw new RsuInitObjectsException("Box Mesh error");
+                                        if (visParam.Count != 3) new RsuException(new Exception(),"Box Mesh error");
                                         var box = _objectController.CreateBox(objFrame, (float) visParam[0], (float) visParam[1], (float) visParam[2]);
                                         box.tag = tag;
                                     }
                                         break;
                                     case RsShapeType.RsCapsuleShape:
                                     {
-                                        if (visParam.Count != 2) throw new RsuInitObjectsException("Capsule Mesh error");
+                                        if (visParam.Count != 2) new RsuException(new Exception(),"Capsule Mesh error");
                                         var capsule = _objectController.CreateCapsule(objFrame, (float)visParam[0], (float)visParam[1]);
                                         capsule.tag = tag;
                                     }
@@ -697,14 +776,14 @@ namespace raisimUnity
                                         break;
                                     case RsShapeType.RsCylinderShape:
                                     {
-                                        if (visParam.Count != 2) throw new RsuInitObjectsException("Cylinder Mesh error");
+                                        if (visParam.Count != 2) new RsuException(new Exception(),"Cylinder Mesh error");
                                         var cylinder = _objectController.CreateCylinder(objFrame, (float)visParam[0], (float)visParam[1]);
                                         cylinder.tag = tag;
                                     }
                                         break;
                                     case RsShapeType.RsSphereShape:
                                     {
-                                        if (visParam.Count != 1) throw new RsuInitObjectsException("Sphere Mesh error");
+                                        if (visParam.Count != 1) new RsuException(new Exception(),"Sphere Mesh error");
                                         var sphere = _objectController.CreateSphere(objFrame, (float)visParam[0]);
                                         sphere.tag = tag;
                                     }
@@ -932,7 +1011,8 @@ namespace raisimUnity
                                 }
                                     break;
                                 default:
-                                    throw new RsuInitObjectsException("Not Implemented Appearance Shape");
+                                    new RsuException(new Exception(),"Not Implemented Appearance Shape");
+                                    break;
                             }
                         }
                     }
@@ -1049,11 +1129,11 @@ namespace raisimUnity
         {
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestObjectPosition));
             if (_tcpHelper.ReadData() <= 0)
-                throw new RsuUpdateObjectsPositionException("Cannot read data from TCP");
+                new RsuException(new Exception(),"Cannot read data from TCP");
 
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             if (state == ServerStatus.StatusTerminating)
-                throw new RsuUpdateObjectsPositionException("Server is terminating");
+                new RsuException(new Exception(),"Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1105,7 +1185,7 @@ namespace raisimUnity
                     }
                     else
                     {
-                        throw new RsuUpdateObjectsPositionException("Cannot find unity game object: " + objectName);
+                        new RsuException(new Exception(),"Cannot find unity game object: " + objectName);
                     }
                 }
             }
@@ -1119,11 +1199,11 @@ namespace raisimUnity
         {
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestVisualPosition));
             if (_tcpHelper.ReadData() <= 0)
-                throw new RsuUpdateVisualsPositionException("Cannot read data from TCP");
+                new RsuException(new Exception(),"Cannot read data from TCP");
 
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             if (state == ServerStatus.StatusTerminating)
-                throw new RsuUpdateVisualsPositionException("Server is terminating");
+                new RsuException(new Exception(),"Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1133,11 +1213,11 @@ namespace raisimUnity
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType == ServerMessageType.NoMessage)
             {
-                throw new RsuUpdateVisualsPositionException("Server gives wrong message");
+                new RsuException(new Exception(),"Server gives wrong message");
             }
             if (messageType != ServerMessageType.VisualPositionUpdate)
             {
-                throw new RsuUpdateVisualsPositionException("Server gives wrong message");
+                new RsuException(new Exception(),"Server gives wrong message");
             }
             
             ulong configurationNumber = _tcpHelper.GetDataUlong();
@@ -1175,7 +1255,7 @@ namespace raisimUnity
                 }
                 else
                 {
-                    throw new RsuUpdateVisualsPositionException("Cannot find unity game object: " + visualName);
+                    new RsuException(new Exception(),"Cannot find unity game object: " + visualName);
                 }
             }
             
@@ -1188,11 +1268,11 @@ namespace raisimUnity
         {
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestContactInfos));
             if (_tcpHelper.ReadData() <= 0)
-                throw new RsuUpdateContactsException("Cannot read data from TCP");
+                new RsuException(new Exception(),"Cannot read data from TCP");
             
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             if (state == ServerStatus.StatusTerminating)
-                throw new RsuUpdateContactsException("Server is terminating");
+                new RsuException(new Exception(),"Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1202,7 +1282,7 @@ namespace raisimUnity
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType != ServerMessageType.ContactInfoUpdate)
             {
-                throw new RsuUpdateContactsException("Server gives wrong message");
+                new RsuException(new Exception(),"Server gives wrong message");
             }
             
             ulong numContacts = _tcpHelper.GetDataUlong();
@@ -1256,12 +1336,12 @@ namespace raisimUnity
         {
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestConfigXML));
             if (_tcpHelper.ReadData() <= 0)
-                throw new RsuReadXMLException("Cannot read data from TCP");
+                new RsuException(new Exception(),"Cannot read data from TCP");
             
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             
             if (state == ServerStatus.StatusTerminating)
-                throw new RsuReadXMLException("Server is terminating");
+                new RsuException(new Exception(),"Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1276,7 +1356,7 @@ namespace raisimUnity
                 
             if (messageType != ServerMessageType.ConfigXml)
             {
-                throw new RsuReadXMLException("Server gives wrong message");
+                new RsuException(new Exception(),"Server gives wrong message");
             }
 
             string xmlString = _tcpHelper.GetDataString();

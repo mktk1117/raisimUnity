@@ -72,11 +72,13 @@ namespace raisimUnity
             _resourceDirs.RemoveAt(_resourceDirs.Count - 1);
         }
 
-        public string RetrieveMeshPath(string meshDirPathInServer, string meshName)
+        public string RetrieveMeshPath(string meshDirPathInServer, string meshNameRaw)
         {
             // find a full mesh path from client side.
             // return null if it cannot find the file.
-            
+            var indexOfSlash = meshNameRaw.LastIndexOf("/");
+            var startIndex = indexOfSlash > -1 ? indexOfSlash : 0;
+            var meshName = meshNameRaw.Substring(startIndex);
             var parent = Directory.GetParent(meshDirPathInServer).FullName;    // .../rsc/robot/alma
             var grandParent = Directory.GetParent(parent).FullName;            // .../rsc/robot
 
@@ -183,6 +185,22 @@ namespace raisimUnity
             foreach (var dir in _resourceDirs)
             {
                 var meshPath = Path.Combine(dir, curr, meshName);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
+            
+            // 10. check the directory 
+            //
+            // e.g.
+            // meshDirPathInServer: .../rsc/anymal/
+            // meshName: anymal_base.dae
+            //
+            // curr = anymal
+            foreach (var dir in _resourceDirs)
+            {
+                var meshPath = Path.Combine(dir, meshName);
                 if (File.Exists(meshPath))
                 {
                     return meshPath;
