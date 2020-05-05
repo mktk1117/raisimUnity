@@ -119,6 +119,7 @@ public class CameraController : MonoBehaviour
     {
         // Set target frame rate (optional)
         Application.targetFrameRate = frameRate;
+        _relativePositionB = new Vector3(1.0f,1.0f,1.0f);
 
         // Prepare textures and initial values
         _screenWidth = cam.pixelWidth;
@@ -227,6 +228,9 @@ public class CameraController : MonoBehaviour
                     _selected = GameObject.Find(selectedNumber_.ToString());    
                 }
 
+                transform.rotation = Quaternion.LookRotation(_selected.transform.position - transform.position);
+                _relativePositionB = Quaternion.Inverse(transform.rotation) * (_selected.transform.position - transform.position);
+                
                 if (!_selected)
                 {
                     selectedNumber_ = prevSelectedNumber;
