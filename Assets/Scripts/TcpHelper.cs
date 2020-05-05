@@ -32,8 +32,8 @@ namespace raisimUnity
 {
     public class TcpHelper
     {
-        private const int MaxBufferSize = 33554432;
-        private const int MaxPacketSize = 4096;
+        private const int MaxBufferSize = 4194304;
+        private const int MaxPacketSize = 1024;
         private const int FooterSize = sizeof(Byte);
 
         // Tcp Address
@@ -143,20 +143,30 @@ namespace raisimUnity
             
             int numBytes = 0;
             Byte footer = Convert.ToByte('c');
+            int[] readHistory = new int[500];
+            int readCounter = 0;
+            int valread = 0;
+            
             while (footer == Convert.ToByte('c'))
             {
                 _buffer[numBytes + MaxPacketSize - FooterSize] = Convert.ToByte('c');
-                int valread = 0;
-
+                
+                valread = 0;
                 while (valread < MaxPacketSize)
                 {
-                    valread += _stream.Read(_buffer, numBytes, MaxPacketSize);
-                    numBytes += valread;
+                    int recieved = _stream.Read(_buffer, numBytes, MaxPacketSize - valread);
+                    valread += recieved;
+                    numBytes += recieved;
+                    readHistory[readCounter] = recieved;
+                    readCounter++;
                 }
                 
                 footer = _buffer[numBytes - FooterSize];
                 numBytes -= FooterSize;
             }
+
+            if (footer != Convert.ToByte('e'))
+                new RsuException("TcpHelper: Read data exception. The footer is not termination.");
 
             _bufferOffset = 0;
             return numBytes;

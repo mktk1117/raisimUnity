@@ -24,19 +24,23 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace raisimUnity
 {
     public class RsuException {
         public RsuException(Exception ex)
         {
-            StackTrace st = new StackTrace(ex, true);
-            throw new Exception(st.GetFrame(st.FrameCount - 1) + ", " + ex.Message);
+            throw new Exception(ex.Message);
+        }
+        
+        public RsuException(string message)
+        {
+            throw new Exception(message);
         }
         
         public RsuException(Exception ex, String message) {
-            StackTrace st = new StackTrace(ex, true);
-            throw new Exception(st.GetFrame(st.FrameCount - 1) + ", " + message);
+            throw new Exception(message + "\n" + ex.Message);
         }
     }
 }

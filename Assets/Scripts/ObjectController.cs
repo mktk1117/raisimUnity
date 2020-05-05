@@ -285,6 +285,7 @@ namespace raisimUnity
             }
 
             Mesh mesh = new Mesh();
+            mesh.indexFormat = IndexFormat.UInt32;
             mesh.vertices = vertices.ToArray();
             mesh.triangles = indices.ToArray();
             mesh.uv = uvs.ToArray();

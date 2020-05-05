@@ -245,7 +245,7 @@ namespace raisimUnity
                                 _tcpHelper.WriteData(
                                     BitConverter.GetBytes((int) ClientMessageType.RequestServerStatus));
                                 if (_tcpHelper.ReadData() <= 0)
-                                    new RsuException(new Exception(), "Cannot read data from TCP");
+                                    new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
                                 if (state == ServerStatus.StatusRendering)
@@ -256,7 +256,7 @@ namespace raisimUnity
                             }
                             catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: ClientStatus.Idle");
                             }
                             
                             break;
@@ -279,11 +279,11 @@ namespace raisimUnity
                                 // Start initialization
                                 _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
                                 if (_tcpHelper.ReadData() <= 0)
-                                    new RsuException(new Exception(), "Cannot read data from TCP");
+                                    new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
                                 if (state == ServerStatus.StatusTerminating)
-                                    new RsuException(new Exception(), "Server is terminating");
+                                    new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
                                 {
                                     _clientStatus = ClientStatus.Idle;
@@ -292,7 +292,7 @@ namespace raisimUnity
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.Initialization)
-                                    new RsuException(new Exception(), "Server gives wrong message");
+                                    new RsuException("RsUnityRemote: Server gives wrong message");
 
                                 _objectConfiguration = _tcpHelper.GetDataUlong();
                                 _numWorldObjects = _tcpHelper.GetDataUlong();
@@ -300,7 +300,7 @@ namespace raisimUnity
                                 _clientStatus = ClientStatus.InitializingObjects;
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: InitializeObjectsStart");
                             }
                             
                             break;
@@ -327,11 +327,11 @@ namespace raisimUnity
                                 }
                                 else
                                 {
-                                    // TODO error
+                                    new RsuException("RsUnityRemote: got more objects than expected");
                                 } 
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: InitializingObjects");
                             }
                             
 
@@ -352,11 +352,11 @@ namespace raisimUnity
                                 // Start initialization
                                 _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeVisuals));
                                 if (_tcpHelper.ReadData() <= 0)
-                                    new RsuException(new Exception(),"Cannot read data from TCP");
+                                    new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
                                 if (state == ServerStatus.StatusTerminating)
-                                    new RsuException(new Exception(),"Server is terminating");
+                                    new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
                                 {
                                     _clientStatus = ClientStatus.Idle;
@@ -365,7 +365,7 @@ namespace raisimUnity
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.VisualInitialization)
-                                    new RsuException(new Exception(),"Server gives wrong message");
+                                    new RsuException("RsUnityRemote: Server gives wrong message");
 
                                 _visualConfiguration = _tcpHelper.GetDataUlong();
                                 _numWorldVisuals = _tcpHelper.GetDataUlong();
@@ -374,7 +374,7 @@ namespace raisimUnity
                                 break;
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: InitializeVisualStart");
                             }
                             break;
                         }
@@ -411,7 +411,7 @@ namespace raisimUnity
                                 }
                                 else
                                 {
-                                    throw new Exception();
+                                    new RsuException("RsUnityRemote: got more visuals than expected");
                                 }
                             } catch (Exception e)
                             {
@@ -453,11 +453,11 @@ namespace raisimUnity
                                 // Start reinitializing
                                 _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
                                 if (_tcpHelper.ReadData() <= 0)
-                                    new RsuException(new Exception(), "Cannot read data from TCP");
+                                    new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
                                 if (state == ServerStatus.StatusTerminating)
-                                    new RsuException(new Exception(), "Server is terminating");
+                                    new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
                                 {
                                     _clientStatus = ClientStatus.Idle;
@@ -466,7 +466,7 @@ namespace raisimUnity
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.Initialization)
-                                    new RsuException(new Exception(),"Server gives wrong message");
+                                    new RsuException("RsUnityRemote: Server gives wrong message");
 
                                 _objectConfiguration = _tcpHelper.GetDataUlong();
                                 _numWorldObjects = _tcpHelper.GetDataUlong();
@@ -474,7 +474,7 @@ namespace raisimUnity
                                 _clientStatus = ClientStatus.ReinitializingObjects;
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: ReinitializeObjectStart");
                             }
                             
                             break;
@@ -506,11 +506,11 @@ namespace raisimUnity
                                 }
                                 else
                                 {
-                                    throw new Exception();
+                                    new RsuException("RsUnityRemote: got more objects than expected");
                                 }
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: ReinitializingObjects");
                             }
                             
 
@@ -533,7 +533,7 @@ namespace raisimUnity
                                 // Else clientStatus is updated to UpdateObjectPosition
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: UpdateVisualPosition");
                             }
 
                             break;
@@ -553,11 +553,11 @@ namespace raisimUnity
                                 // Start reinitializing
                                 _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeVisuals));
                                 if (_tcpHelper.ReadData() <= 0)
-                                    new RsuException(new Exception(),"Cannot read data from TCP");
+                                    new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
                                 if (state == ServerStatus.StatusTerminating)
-                                    new RsuException(new Exception(),"Server is terminating");
+                                    new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
                                 {
                                     _clientStatus = ClientStatus.Idle;
@@ -566,7 +566,7 @@ namespace raisimUnity
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.VisualInitialization)
-                                    new RsuException(new Exception(),"Server gives wrong message");
+                                    new RsuException("RsUnityRemote: Server gives wrong message");
 
                                 _visualConfiguration = _tcpHelper.GetDataUlong();
                                 _numWorldVisuals = _tcpHelper.GetDataUlong();
@@ -574,7 +574,7 @@ namespace raisimUnity
                                 _clientStatus = ClientStatus.ReinitializingVisuals;
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: ReinitializeVisualsStart");
                             }
                             break;
                         }
@@ -605,11 +605,11 @@ namespace raisimUnity
                                 }
                                 else
                                 {
-                                    throw new Exception();
+                                    new RsuException("RsUnityRemote: got more visuals than expected");
                                 }
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: ReinitializingVisuals");
                             }
                             
 
@@ -729,7 +729,7 @@ namespace raisimUnity
                                 string meshFilePathInResourceDir = _loader.RetrieveMeshPath(urdfDirPathInServer, meshFile);
                                 if (meshFilePathInResourceDir == null)
                                 {
-                                    new RsuException(new Exception(),"Cannot find mesh from resource directories = " + meshFile);
+                                    new RsuException("Cannot find mesh from resource directories = " + meshFile);
                                 }
 
                                 try
@@ -739,7 +739,7 @@ namespace raisimUnity
                                 }
                                 catch (Exception e)
                                 {
-                                    new RsuException(new Exception(),"Cannot create mesh: " + e.Message);
+                                    new RsuException("Cannot create mesh: " + e.Message);
                                     throw;
                                 }
                             }
@@ -757,14 +757,14 @@ namespace raisimUnity
                                 {
                                     case RsShapeType.RsBoxShape:
                                     {
-                                        if (visParam.Count != 3) new RsuException(new Exception(),"Box Mesh error");
+                                        if (visParam.Count != 3) new RsuException("Box Mesh error");
                                         var box = _objectController.CreateBox(objFrame, (float) visParam[0], (float) visParam[1], (float) visParam[2]);
                                         box.tag = tag;
                                     }
                                         break;
                                     case RsShapeType.RsCapsuleShape:
                                     {
-                                        if (visParam.Count != 2) new RsuException(new Exception(),"Capsule Mesh error");
+                                        if (visParam.Count != 2) new RsuException("Capsule Mesh error");
                                         var capsule = _objectController.CreateCapsule(objFrame, (float)visParam[0], (float)visParam[1]);
                                         capsule.tag = tag;
                                     }
@@ -776,14 +776,14 @@ namespace raisimUnity
                                         break;
                                     case RsShapeType.RsCylinderShape:
                                     {
-                                        if (visParam.Count != 2) new RsuException(new Exception(),"Cylinder Mesh error");
+                                        if (visParam.Count != 2) new RsuException("Cylinder Mesh error");
                                         var cylinder = _objectController.CreateCylinder(objFrame, (float)visParam[0], (float)visParam[1]);
                                         cylinder.tag = tag;
                                     }
                                         break;
                                     case RsShapeType.RsSphereShape:
                                     {
-                                        if (visParam.Count != 1) new RsuException(new Exception(),"Sphere Mesh error");
+                                        if (visParam.Count != 1) new RsuException("Sphere Mesh error");
                                         var sphere = _objectController.CreateSphere(objFrame, (float)visParam[0]);
                                         sphere.tag = tag;
                                     }
@@ -1011,7 +1011,7 @@ namespace raisimUnity
                                 }
                                     break;
                                 default:
-                                    new RsuException(new Exception(),"Not Implemented Appearance Shape");
+                                    new RsuException("Not Implemented Appearance Shape");
                                     break;
                             }
                         }
@@ -1129,11 +1129,11 @@ namespace raisimUnity
         {
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestObjectPosition));
             if (_tcpHelper.ReadData() <= 0)
-                new RsuException(new Exception(),"Cannot read data from TCP");
+                new RsuException("Cannot read data from TCP");
 
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             if (state == ServerStatus.StatusTerminating)
-                new RsuException(new Exception(),"Server is terminating");
+                new RsuException("Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1185,7 +1185,7 @@ namespace raisimUnity
                     }
                     else
                     {
-                        new RsuException(new Exception(),"Cannot find unity game object: " + objectName);
+                        new RsuException("Cannot find unity game object: " + objectName);
                     }
                 }
             }
@@ -1199,11 +1199,11 @@ namespace raisimUnity
         {
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestVisualPosition));
             if (_tcpHelper.ReadData() <= 0)
-                new RsuException(new Exception(),"Cannot read data from TCP");
+                new RsuException("Cannot read data from TCP");
 
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             if (state == ServerStatus.StatusTerminating)
-                new RsuException(new Exception(),"Server is terminating");
+                new RsuException("Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1213,11 +1213,11 @@ namespace raisimUnity
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType == ServerMessageType.NoMessage)
             {
-                new RsuException(new Exception(),"Server gives wrong message");
+                new RsuException("Server gives wrong message");
             }
             if (messageType != ServerMessageType.VisualPositionUpdate)
             {
-                new RsuException(new Exception(),"Server gives wrong message");
+                new RsuException("Server gives wrong message");
             }
             
             ulong configurationNumber = _tcpHelper.GetDataUlong();
@@ -1255,7 +1255,7 @@ namespace raisimUnity
                 }
                 else
                 {
-                    new RsuException(new Exception(),"Cannot find unity game object: " + visualName);
+                    new RsuException("Cannot find unity game object: " + visualName);
                 }
             }
             
@@ -1268,11 +1268,11 @@ namespace raisimUnity
         {
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestContactInfos));
             if (_tcpHelper.ReadData() <= 0)
-                new RsuException(new Exception(),"Cannot read data from TCP");
+                new RsuException("Cannot read data from TCP");
             
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             if (state == ServerStatus.StatusTerminating)
-                new RsuException(new Exception(),"Server is terminating");
+                new RsuException("Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1282,7 +1282,7 @@ namespace raisimUnity
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType != ServerMessageType.ContactInfoUpdate)
             {
-                new RsuException(new Exception(),"Server gives wrong message");
+                new RsuException("Server gives wrong message");
             }
             
             ulong numContacts = _tcpHelper.GetDataUlong();
@@ -1336,12 +1336,12 @@ namespace raisimUnity
         {
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestConfigXML));
             if (_tcpHelper.ReadData() <= 0)
-                new RsuException(new Exception(),"Cannot read data from TCP");
+                new RsuException("Cannot read data from TCP");
             
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             
             if (state == ServerStatus.StatusTerminating)
-                new RsuException(new Exception(),"Server is terminating");
+                new RsuException("Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1356,7 +1356,7 @@ namespace raisimUnity
                 
             if (messageType != ServerMessageType.ConfigXml)
             {
-                new RsuException(new Exception(),"Server gives wrong message");
+                new RsuException("Server gives wrong message");
             }
 
             string xmlString = _tcpHelper.GetDataString();
