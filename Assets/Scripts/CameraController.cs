@@ -55,11 +55,13 @@ public class CameraController : MonoBehaviour
         get => _isRecording;
     }
 
+    public int selectedNumber_ = 0;
+
     // Public Properties
     public int maxFrames; // maximum number of frames you want to record in one video
     public int frameRate = 30; // number of frames to capture per second
     public bool videoAvailable = false;
-
+    
     // The Encoder Thread
     private Thread _saverThread;
 
@@ -86,6 +88,9 @@ public class CameraController : MonoBehaviour
     // Error modal view
     private const string _ErrorModalViewName = "_CanvasModalViewError";
     private ErrorViewController _errorModalView;
+    
+    // UI
+    private bool _uiVisible = true;
     
     public bool ThreadIsProcessing
     {
@@ -156,6 +161,14 @@ public class CameraController : MonoBehaviour
             transform.Translate(move);
         }
         
+        if (Input.GetKeyUp(KeyCode.F1))
+        {
+            _uiVisible = !_uiVisible;
+            UIController ui = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
+            ui.gameObject.GetComponent<Canvas>().enabled = _uiVisible;
+        }
+        
+        
         if (!EventSystem.current.IsPointerOverGameObject ()) 
         {
             // Only do this if mouse pointer is not on the GUI
@@ -188,6 +201,36 @@ public class CameraController : MonoBehaviour
                     {
                         ren.material.shader = Shader.Find("Outlined/UltimateOutline");
                     }
+                }
+            }
+
+            // swich objects views by arrow keys
+            bool changeSelected = false;
+            int prevSelectedNumber = selectedNumber_;
+            GameObject prevSelected = _selected;
+
+            if (Input.GetKeyUp(KeyCode.RightArrow))
+            {
+                selectedNumber_++;
+                changeSelected = true;
+            } else if (Input.GetKeyUp(KeyCode.LeftArrow))
+            {
+                selectedNumber_--;
+                changeSelected = true;
+            }
+
+            if (changeSelected)
+            {
+                _selected = GameObject.Find(selectedNumber_ + "/0/0");
+                if (!_selected)
+                {
+                    _selected = GameObject.Find(selectedNumber_.ToString());    
+                }
+
+                if (!_selected)
+                {
+                    selectedNumber_ = prevSelectedNumber;
+                    _selected = prevSelected;
                 }
             }
 
