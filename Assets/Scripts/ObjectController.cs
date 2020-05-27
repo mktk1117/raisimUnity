@@ -117,7 +117,7 @@ namespace raisimUnity
         {
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
             box.transform.SetParent(root.transform, true);
-            box.transform.localScale = new Vector3(sx, sy, sz);
+            box.transform.localScale = new Vector3(sx, sz, sy);
             return box;
         }
 
@@ -398,7 +398,8 @@ namespace raisimUnity
 
             marker.tag = "contact";
             marker.name = "contact" + index.ToString();
-            marker.transform.localPosition = new Vector3(-rsPos.x, rsPos.z, -rsPos.y);
+            Quaternion q = new Quaternion(0, 0, 0, 1);
+            SetTransform(marker, rsPos, q);
             marker.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
             marker.GetComponent<Renderer>().material.SetColor("_Color", Color.red);
             return marker;
@@ -418,9 +419,8 @@ namespace raisimUnity
             
             Quaternion q = new Quaternion(0, 0, 0, 1);
             q.SetLookRotation(view);
-            
-            marker.transform.localPosition = new Vector3(-rsPos.x, rsPos.z, -rsPos.y);
-            marker.transform.localRotation = q;
+
+            SetTransform(marker, rsPos, q);
             marker.transform.localScale = new Vector3(
                 0.3f * markerScale * force.magnitude, 
                 0.3f * markerScale * force.magnitude, 
