@@ -371,7 +371,6 @@ namespace raisimUnity
                                 _numWorldVisuals = _tcpHelper.GetDataUlong();
                                 _numInitializedVisuals = 0;
                                 _clientStatus = ClientStatus.InitializingVisuals;
-                                break;
                             } catch (Exception e)
                             {
                                 new RsuException(e, "RsUnityRemote: InitializeVisualStart");
@@ -434,7 +433,7 @@ namespace raisimUnity
                                 // Else clientStatus is updated to UpdateVisualPosition
                             } catch (Exception e)
                             {
-                                new RsuException(e);
+                                new RsuException(e, "RsUnityRemote: UpdateObjectPosition");
                             }
 
                             break;
@@ -708,7 +707,7 @@ namespace raisimUnity
                                 
                             ulong group = _tcpHelper.GetDataUlong();
 
-                            string subName = Path.Combine(objectIndex.ToString(), visItem.ToString(), j.ToString());
+                            string subName = objectIndex.ToString() + "/" + visItem.ToString() + "/" + j.ToString();
                             var objFrame = _objectController.CreateRootObject(_objectsRoot, subName);
 
                             string tag = "";
@@ -1349,7 +1348,6 @@ namespace raisimUnity
             }
 
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-            return; // No XML
             
             //TODO: properly use xml file here
             if (messageType == ServerMessageType.NoMessage) return; // No XML

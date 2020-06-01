@@ -68,13 +68,14 @@ namespace raisimUnity
                 if (_client == null || !_client.Connected)
                 {
                     _client = new TcpClient(_tcpAddress, _tcpPort);
+                    _client.Client.NoDelay = true;
                     _stream = _client.GetStream();
                 }
             }
             catch (Exception e)
             {
                 // connection cannot be established
-                new RsuException(e);
+                new RsuException(e, "tcpHelper, Establish connection failed");
             }
         }
         
@@ -138,14 +139,14 @@ namespace raisimUnity
             {
                 if (Time.realtimeSinceStartup - readDataTime > 5.0f)
                     // If data is not available until timeout, return error
-                    return -1;
+                    new RsuException("ReadData timeout!");
             }
             
             int numBytes = 0;
             Byte footer = Convert.ToByte('c');
             int[] readHistory = new int[500];
             int readCounter = 0;
-            int valread = 0;
+            int valread;
             
             while (footer == Convert.ToByte('c'))
             {
@@ -166,7 +167,7 @@ namespace raisimUnity
             }
 
             if (footer != Convert.ToByte('e'))
-                new RsuException("TcpHelper: Read data exception. The footer is not termination.");
+                new RsuException("TcpHelper: Read data exception. The footer is not end.");
 
             _bufferOffset = 0;
             return numBytes;
@@ -235,6 +236,7 @@ namespace raisimUnity
         {
             var data = BitConverter.ToUInt64(_buffer, _bufferOffset).As<ulong>();
             _bufferOffset = _bufferOffset + sizeof(ulong);
+            int ulongSize = sizeof(ulong);
             return data;
         }
 
