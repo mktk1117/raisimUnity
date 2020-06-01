@@ -65,6 +65,7 @@ namespace raisimUnity
         private const string _ToggleContactPointsName = "_ToggleContactPoints";
         private const string _ToggleContactForcesName = "_ToggleContactForces";
         private const string _ToggleBodyFramesName = "_ToggleBodyFrames";
+        private int connectionTryCounter = 0;
         
         // Sliders
         private const string _SliderBodyFramesName = "_SliderBodyFrames";
@@ -74,7 +75,7 @@ namespace raisimUnity
         // Modal view
         private const string _ErrorModalViewName = "_CanvasModalViewError";
         private const string _ErrorModalViewMessageName = "_TextErrorMessage";
-
+        
         // Backgrounds
         private Material _daySky;
         private Material _sunriseSky;
@@ -386,6 +387,36 @@ namespace raisimUnity
                 else
                 {
                     recordButton.GetComponent<Button>().interactable = true;
+                }
+            }
+            
+            var connectToggle = GameObject.Find("_AutoConnect").GetComponent<Toggle>();
+
+            if (connectToggle.isOn)
+            {
+                if (connectionTryCounter++ % 30 == 0)
+                {
+                    var ipInputField = GameObject.Find(_InputFieldTcpName).GetComponent<InputField>();
+                    ipInputField.text = _remote.TcpAddress;
+                    var portInputField = GameObject.Find(_InputFieldPortName).GetComponent<InputField>();
+                    portInputField.text = _remote.TcpPort.ToString();
+                
+                    _remote.TcpAddress = ipInputField.text;
+                    _remote.TcpPort = Int32.Parse(portInputField.text);
+                
+                    // connect / disconnect
+                    try
+                    {
+                        if (!_remote.TcpConnected)
+                        {
+                            _remote.EstablishConnection();
+                        }
+                    }
+                    catch
+                    {
+                        
+                    }
+                    
                 }
             }
 
