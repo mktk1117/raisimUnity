@@ -88,9 +88,11 @@ public class CameraController : MonoBehaviour
     // Error modal view
     private const string _ErrorModalViewName = "_CanvasModalViewError";
     private ErrorViewController _errorModalView;
+    private UIController _sidebar;
+    private HelpUIController _helpUI;
     
     // UI
-    private bool _uiVisible = true;
+    private int _visibleUI = 0;
     
     public bool ThreadIsProcessing
     {
@@ -113,6 +115,11 @@ public class CameraController : MonoBehaviour
         _dirPath = Path.Combine(Application.dataPath, "../Screenshot");
         if (!File.Exists(_dirPath))
             Directory.CreateDirectory(_dirPath);
+        
+        _sidebar = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
+        _helpUI = GameObject.Find("_CanvasHelpUI").GetComponent<HelpUIController>();
+        _sidebar.gameObject.GetComponent<Canvas>().enabled = true;
+        _helpUI.gameObject.GetComponent<Canvas>().enabled = false;
     }
 
     void Start () 
@@ -164,9 +171,23 @@ public class CameraController : MonoBehaviour
         
         if (Input.GetKeyUp(KeyCode.F1))
         {
-            _uiVisible = !_uiVisible;
-            UIController ui = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
-            ui.gameObject.GetComponent<Canvas>().enabled = _uiVisible;
+            _visibleUI++;
+            _sidebar.gameObject.GetComponent<Canvas>().enabled = false;
+            _helpUI.gameObject.GetComponent<Canvas>().enabled = false;
+            switch (_visibleUI)
+            {
+                case 0:
+                    UIController prevUi = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
+                    prevUi.gameObject.GetComponent<Canvas>().enabled = true;
+                    break;
+                case 1:
+                    HelpUIController newUI = GameObject.Find("_CanvasHelpUI").GetComponent<HelpUIController>();
+                    newUI.gameObject.GetComponent<Canvas>().enabled = true;
+                    break;
+                case 2:
+                    _visibleUI = -1;
+                    break;
+            }
         }
         
         
