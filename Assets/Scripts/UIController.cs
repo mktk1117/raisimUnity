@@ -405,18 +405,11 @@ namespace raisimUnity
                     _remote.TcpPort = Int32.Parse(portInputField.text);
                 
                     // connect / disconnect
-                    try
+                    if (!_remote.TcpConnected)
                     {
-                        if (!_remote.TcpConnected)
-                        {
-                            _remote.EstablishConnection();
-                        }
-                    }
-                    catch
-                    {
-                        
-                    }
-                    
+                        RsUnityRemote remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
+                        remote.requestConnection();
+                    }                    
                 }
             }
 

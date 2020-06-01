@@ -1446,9 +1446,25 @@ namespace raisimUnity
             }
         }
 
+        public void requestConnection ()
+        {
+            if(_clientStatus == ClientStatus.Idle)
+            {
+                try
+                {
+                    EstablishConnection();
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
         //**************************************************************************************************************
         //  Getter and Setters 
         //**************************************************************************************************************
+
         
         public bool ShowVisualBody
         {
@@ -1516,7 +1532,8 @@ namespace raisimUnity
             get => _tcpHelper.TcpPort;
             set => _tcpHelper.TcpPort = value;
         }
-        
+
+
         public bool TcpConnected
         {
             get => _tcpHelper.Connected;
