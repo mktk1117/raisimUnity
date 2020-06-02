@@ -394,16 +394,8 @@ namespace raisimUnity
 
             if (connectToggle.isOn)
             {
-                if (connectionTryCounter++ % 30 == 0)
+                if (connectionTryCounter++ % 150 == 0)
                 {
-                    var ipInputField = GameObject.Find(_InputFieldTcpName).GetComponent<InputField>();
-                    ipInputField.text = _remote.TcpAddress;
-                    var portInputField = GameObject.Find(_InputFieldPortName).GetComponent<InputField>();
-                    portInputField.text = _remote.TcpPort.ToString();
-                
-                    _remote.TcpAddress = ipInputField.text;
-                    _remote.TcpPort = Int32.Parse(portInputField.text);
-                
                     // connect / disconnect
                     if (!_remote.TcpConnected)
                     {

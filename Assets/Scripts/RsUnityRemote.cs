@@ -292,7 +292,7 @@ namespace raisimUnity
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.Initialization)
-                                    new RsuException("RsUnityRemote: Server gives wrong message");
+                                    new RsuException("RsUnityRemote: The server sends a wrong message");
 
                                 _objectConfiguration = _tcpHelper.GetDataUlong();
                                 _numWorldObjects = _tcpHelper.GetDataUlong();
@@ -365,7 +365,7 @@ namespace raisimUnity
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.VisualInitialization)
-                                    new RsuException("RsUnityRemote: Server gives wrong message");
+                                    new RsuException("RsUnityRemote: The server sends a wrong message");
 
                                 _visualConfiguration = _tcpHelper.GetDataUlong();
                                 _numWorldVisuals = _tcpHelper.GetDataUlong();
@@ -465,7 +465,7 @@ namespace raisimUnity
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.Initialization)
-                                    new RsuException("RsUnityRemote: Server gives wrong message");
+                                    new RsuException("RsUnityRemote: The server sends a wrong message");
 
                                 _objectConfiguration = _tcpHelper.GetDataUlong();
                                 _numWorldObjects = _tcpHelper.GetDataUlong();
@@ -565,7 +565,7 @@ namespace raisimUnity
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.VisualInitialization)
-                                    new RsuException("RsUnityRemote: Server gives wrong message");
+                                    new RsuException("RsUnityRemote: The server sends a wrong message");
 
                                 _visualConfiguration = _tcpHelper.GetDataUlong();
                                 _numWorldVisuals = _tcpHelper.GetDataUlong();
@@ -1212,11 +1212,11 @@ namespace raisimUnity
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType == ServerMessageType.NoMessage)
             {
-                new RsuException("Server gives wrong message");
+                new RsuException("The server sends a wrong message");
             }
             if (messageType != ServerMessageType.VisualPositionUpdate)
             {
-                new RsuException("Server gives wrong message");
+                new RsuException("The server sends a wrong message");
             }
             
             ulong configurationNumber = _tcpHelper.GetDataUlong();
@@ -1281,7 +1281,7 @@ namespace raisimUnity
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType != ServerMessageType.ContactInfoUpdate)
             {
-                new RsuException("Server gives wrong message");
+                new RsuException("The server sends a wrong message");
             }
             
             ulong numContacts = _tcpHelper.GetDataUlong();
@@ -1340,7 +1340,7 @@ namespace raisimUnity
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             
             if (state == ServerStatus.StatusTerminating)
-                new RsuException("Server is terminating");
+                new RsuException("The server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
                 _clientStatus = ClientStatus.Idle;
@@ -1354,7 +1354,7 @@ namespace raisimUnity
                 
             if (messageType != ServerMessageType.ConfigXml)
             {
-                new RsuException("Server gives wrong message");
+                new RsuException("The server sends a wrong message");
             }
 
             string xmlString = _tcpHelper.GetDataString();
@@ -1452,7 +1452,7 @@ namespace raisimUnity
             {
                 try
                 {
-                    EstablishConnection();
+                    _tcpHelper.TryConnection();
                 }
                 catch
                 {

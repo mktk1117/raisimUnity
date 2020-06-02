@@ -78,7 +78,27 @@ namespace raisimUnity
                 new RsuException(e, "tcpHelper, Establish connection failed");
             }
         }
-        
+
+        public bool TryConnection()
+        {
+            // create tcp client and stream
+            if (_client == null || !_client.Connected)
+            {
+                _client = new TcpClient(_tcpAddress, _tcpPort);
+                if (_client == null)
+                {
+                    return false;
+                }
+
+                _client.Client.NoDelay = true;
+                _stream = _client.GetStream();
+
+                return true;
+            }
+
+            return false;
+        }
+
         public void CloseConnection()
         {
             try
@@ -121,9 +141,8 @@ namespace raisimUnity
                 else
                     return false;
             }
-            catch (Exception e)
+            catch
             {
-                new RsuException(e);
                 return false;
             }
         }
@@ -236,7 +255,6 @@ namespace raisimUnity
         {
             var data = BitConverter.ToUInt64(_buffer, _bufferOffset).As<ulong>();
             _bufferOffset = _bufferOffset + sizeof(ulong);
-            int ulongSize = sizeof(ulong);
             return data;
         }
 
