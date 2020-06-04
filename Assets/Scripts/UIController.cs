@@ -24,6 +24,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.UI;
@@ -38,6 +39,7 @@ namespace raisimUnity
     {
         private RsUnityRemote _remote = null;
         private CameraController _camera = null;
+        private bool isAutoConnecting = false;
         
         static GUIStyle _style = null;
         
@@ -82,6 +84,13 @@ namespace raisimUnity
         private Material _sunsetSky;
         private Material _nightSky;
         private Material _milkywaySky;
+
+        private void autoConnect()
+        {
+            isAutoConnecting = true;
+            _remote.requestConnection();
+            isAutoConnecting = false;
+        }
         
         private void Awake()
         {
@@ -392,15 +401,15 @@ namespace raisimUnity
             
             var connectToggle = GameObject.Find("_AutoConnect").GetComponent<Toggle>();
 
-            if (connectToggle.isOn)
+            if (connectToggle.isOn && !isAutoConnecting)
             {
                 if (connectionTryCounter++ % 150 == 0)
                 {
                     // connect / disconnect
                     if (!_remote.TcpConnected)
                     {
-                        RsUnityRemote remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
-                        remote.requestConnection();
+                        Thread thr = new Thread(new ThreadStart(autoConnect));
+                        thr.Start();
                     }                    
                 }
             }

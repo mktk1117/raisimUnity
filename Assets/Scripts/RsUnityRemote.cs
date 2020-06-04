@@ -1452,7 +1452,10 @@ namespace raisimUnity
             {
                 try
                 {
-                    _tcpHelper.TryConnection();
+                    if(_tcpHelper.TryConnection())
+                    {
+                        _clientStatus = ClientStatus.InitializeObjectsStart;
+                    }
                 }
                 catch
                 {

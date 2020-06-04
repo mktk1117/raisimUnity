@@ -85,7 +85,7 @@ namespace raisimUnity
             if (_client == null || !_client.Connected)
             {
                 _client = new TcpClient(_tcpAddress, _tcpPort);
-                if (_client == null)
+                if (!_client.Connected)
                 {
                     return false;
                 }
