@@ -26,6 +26,7 @@ using System;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using UnityEngine;
 
 namespace raisimUnity
@@ -59,12 +60,19 @@ namespace raisimUnity
             _buffer = new byte[MaxBufferSize];
         }
 
+        public void Flush()
+        {
+            if (_stream != null)
+            {
+                _stream.Flush();
+            }
+        }
 
-        public void EstablishConnection()
+        public void EstablishConnection(int waitTime = 1000)
         {
             try
             {
-                // create tcp client and stream
+             // create tcp client and stream
                 if (_client == null || !_client.Connected)
                 {
                     _client = new TcpClient(_tcpAddress, _tcpPort);
@@ -74,8 +82,6 @@ namespace raisimUnity
             }
             catch (Exception e)
             {
-                // connection cannot be established
-                new RsuException(e, "tcpHelper, Establish connection failed");
             }
         }
 
@@ -84,7 +90,9 @@ namespace raisimUnity
             // create tcp client and stream
             if (_client == null || !_client.Connected)
             {
-                _client = new TcpClient(_tcpAddress, _tcpPort);
+                _client = new TcpClient();
+                CancellationToken ct = new CancellationToken(); // Required for "*.Task()" method
+                _client.ConnectAsync(_tcpAddress, _tcpPort).Wait(1000, ct);
                 if (!_client.Connected)
                 {
                     return false;
@@ -92,7 +100,6 @@ namespace raisimUnity
 
                 _client.Client.NoDelay = true;
                 _stream = _client.GetStream();
-
                 return true;
             }
 
@@ -156,7 +163,7 @@ namespace raisimUnity
             readDataTime = Time.realtimeSinceStartup;
             while (!_stream.DataAvailable)
             {
-                if (Time.realtimeSinceStartup - readDataTime > 5.0f)
+                if (Time.realtimeSinceStartup - readDataTime > 1.5f)
                     // If data is not available until timeout, return error
                     new RsuException("ReadData timeout!");
             }

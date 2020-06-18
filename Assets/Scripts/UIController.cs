@@ -77,6 +77,8 @@ namespace raisimUnity
         // Modal view
         private const string _ErrorModalViewName = "_CanvasModalViewError";
         private const string _ErrorModalViewMessageName = "_TextErrorMessage";
+
+        private Thread _autoConnectThread;
         
         // Backgrounds
         private Material _daySky;
@@ -84,6 +86,7 @@ namespace raisimUnity
         private Material _sunsetSky;
         private Material _nightSky;
         private Material _milkywaySky;
+        private Material _whiteSky;
 
         private void autoConnect()
         {
@@ -94,6 +97,7 @@ namespace raisimUnity
         
         private void Awake()
         {
+            Application.targetFrameRate = 60;
             _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
             _camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
 
@@ -180,7 +184,7 @@ namespace raisimUnity
                     _remote.TcpPort = Int32.Parse(portInputField.text);
                 
                     // connect / disconnect
-                    if (!_remote.TcpConnected)
+                    if (!_remote.TcpConnected && !isAutoConnecting)
                     {
                         try
                         {
@@ -240,6 +244,8 @@ namespace raisimUnity
                 _sunsetSky = Resources.Load<Material>("backgrounds/Skybox/Materials/Skybox_Sunset");
                 _nightSky = Resources.Load<Material>("backgrounds/FreeNightSky/Materials/nightsky1");
                 _milkywaySky = Resources.Load<Material>("backgrounds/MilkyWay/Material/MilkyWay");
+                _whiteSky = Resources.Load<Material>("backgrounds/whiteSky");
+
                 RenderSettings.skybox=_daySky;
 
                 var backgroundDropdown = GameObject.Find(_DropdownBackgroundName).GetComponent<Dropdown>();
@@ -329,6 +335,10 @@ namespace raisimUnity
                 // milkyway
                 RenderSettings.skybox=_milkywaySky;
                 break;
+            case 5:
+                // milkyway
+                RenderSettings.skybox=_whiteSky;
+                break;
             default:
                 // TODO error
                 break;
@@ -368,6 +378,10 @@ namespace raisimUnity
                 }
                 connectButton.GetComponentInChildren<Text>().text = "Disconnect";
             }
+            else if (isAutoConnecting)
+            {
+                connectButton.GetComponentInChildren<Text>().text = "AutoConnecting...";
+            }
             else
             {
                 GUILayout.Label("Waiting for connection", _style);
@@ -403,13 +417,21 @@ namespace raisimUnity
 
             if (connectToggle.isOn && !isAutoConnecting)
             {
-                if (connectionTryCounter++ % 150 == 0)
+                // connect / disconnect
+                if (!_remote.TcpConnected)
                 {
-                    // connect / disconnect
-                    if (!_remote.TcpConnected)
+                    if (connectionTryCounter++ % 250 == 0)
                     {
-                        Thread thr = new Thread(new ThreadStart(autoConnect));
-                        thr.Start();
+                        try
+                        {
+                            _remote.EstablishConnection(100);
+                        }
+                        catch (Exception e)
+                        {
+                            var modal = GameObject.Find(_ErrorModalViewName).GetComponent<ErrorViewController>();
+                            modal.Show(true);
+                            modal.SetMessage(e.Message);
+                        }
                     }                    
                 }
             }

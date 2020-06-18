@@ -1869,7 +1869,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 666273144}
   m_HandleRect: {fileID: 666273143}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -6198,6 +6198,8 @@ MonoBehaviour:
       m_Image: {fileID: 0}
     - m_Text: Milkyway
       m_Image: {fileID: 0}
+    - m_Text: White
+      m_Image: {fileID: 0}
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -8788,8 +8790,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 648470227}
   m_HandleRect: {fileID: 648470226}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.610988
+  m_Value: 0.9999997
+  m_Size: 0.7480618
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

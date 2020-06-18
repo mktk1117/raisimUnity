@@ -188,7 +188,7 @@ namespace raisimUnity
             
             // materials
             _planeMaterial = Resources.Load<Material>("Tiles1");
-            _terrainMaterial = Resources.Load<Material>("Ground1");
+            _terrainMaterial = Resources.Load<Material>("white");
             _defaultMaterialR = Resources.Load<Material>("Plastic1");
             _defaultMaterialG = Resources.Load<Material>("Plastic2");
             _defaultMaterialB = Resources.Load<Material>("Plastic3");
@@ -203,9 +203,9 @@ namespace raisimUnity
             _clientStatus = ClientStatus.Idle;
         }
 
-        public void EstablishConnection()
+        public void EstablishConnection(int waitTime=1000)
         {
-            _tcpHelper.EstablishConnection();
+            _tcpHelper.EstablishConnection(waitTime);
             _clientStatus = ClientStatus.InitializeObjectsStart;
         }
 
@@ -663,6 +663,8 @@ namespace raisimUnity
             
             // clear object cache
             _objectController.ClearCache();
+
+            _tcpHelper.Flush();
         }
 
         private void ClearContacts()
