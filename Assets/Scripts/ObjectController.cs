@@ -91,7 +91,7 @@ namespace raisimUnity
             yAxisMarker.name = "frameY";
             yAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(0, 1, 0));
             yAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
-            yAxisMarker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.green);
+            yAxisMarker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.blue);
             
             var zAxisMarker = GameObject.Instantiate(_arrowMesh);
             zAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
@@ -100,7 +100,7 @@ namespace raisimUnity
             zAxisMarker.name = "frameZ";
             zAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(0, 0, -1));
             zAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
-            zAxisMarker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.blue);
+            zAxisMarker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.green);
             
             return rootObj;
         }
@@ -144,8 +144,9 @@ namespace raisimUnity
         {
             var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
             plane.transform.SetParent(root.transform, true);
+            plane.name = "halfSpace";
             plane.transform.localPosition = new Vector3(0, height, 0);
-            plane.transform.localScale = new Vector3(2, 1, 2);
+            plane.transform.localScale = new Vector3(4, 1, 4);
             GameObject.DestroyImmediate(plane.GetComponent<Collider>());
             return plane;
         }
@@ -356,6 +357,7 @@ namespace raisimUnity
                 loadedMesh.name = meshFile;
                 loadedMesh.transform.SetParent(_objectCache.transform, false);
                 loadedMesh.SetActive(false);
+                //loadedMesh.GetComponent<Renderer>().material.shader = Shader.Find("HDRP/Lit");
                 _meshCache.Add(meshFile, new Tuple<GameObject, MeshUpAxis>(loadedMesh, meshUpAxis));
             }
 
@@ -371,7 +373,7 @@ namespace raisimUnity
             mesh.transform.SetParent(root.transform, false);
             Vector3 originalScale = mesh.transform.localScale;
             mesh.transform.localScale = new Vector3((float)sx * originalScale[0], (float)sy * originalScale[1], (float)sz * originalScale[2]);
-            
+
             if(cachedMesh.Item2 == MeshUpAxis.ZUp) {}
             else if(cachedMesh.Item2 == MeshUpAxis.YUp)
                 mesh.transform.localRotation = new Quaternion(-0.7071f, 0, 0, 0.7071f) * mesh.transform.localRotation;
@@ -383,7 +385,6 @@ namespace raisimUnity
             {
                 children.gameObject.AddComponent<MeshCollider>();
             }
-            
             return mesh;
         }
 
@@ -414,16 +415,17 @@ namespace raisimUnity
             marker.transform.SetParent(root.transform, true);
             marker.tag = "contact";
             marker.name = "contactForce" + index.ToString();
-
-            Vector3 view = new Vector3(-force.x, force.z, -force.y);
             
+            Vector3 axis = new Vector3(-force.z,0, force.x);
+            axis.Normalize();
+            float angle = (float)(Math.Acos(force.y/force.magnitude) * 180 / Math.PI);
             Quaternion q = new Quaternion(0, 0, 0, 1);
-            q.SetLookRotation(view);
+            q = Quaternion.AngleAxis(angle, axis);
 
             SetTransform(marker, rsPos, q);
             marker.transform.localScale = new Vector3(
                 0.3f * markerScale * force.magnitude, 
-                0.3f * markerScale * force.magnitude, 
+                0.3f * markerScale * force.magnitude,
                 1.0f * markerScale * force.magnitude
             );
             marker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.blue);

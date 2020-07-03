@@ -23,6 +23,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using UnityEngine;
@@ -42,6 +43,7 @@ namespace raisimUnity
         private bool isAutoConnecting = false;
         
         static GUIStyle _style = null;
+        private string _state = null;
         
         // UI element names
         // Buttons
@@ -50,9 +52,6 @@ namespace raisimUnity
         private const string _ButtonRecordName = "_ButtonRecord";
         private const string _ButtonAddResourceName = "_ButtonAddResource";
         private const string _ButtonDeleteResourceName = "_ButtonDeleteResource";
-        
-        // Dropdown 
-        private const string _DropdownBackgroundName = "DropdownBackground";
         
         // Scroll View
         private const string _ScrollViewResourceDirs = "ScrollResources";
@@ -79,21 +78,8 @@ namespace raisimUnity
         private const string _ErrorModalViewMessageName = "_TextErrorMessage";
 
         private Thread _autoConnectThread;
-        
-        // Backgrounds
-        private Material _daySky;
-        private Material _sunriseSky;
-        private Material _sunsetSky;
-        private Material _nightSky;
-        private Material _milkywaySky;
-        private Material _whiteSky;
 
-        private void autoConnect()
-        {
-            isAutoConnecting = true;
-            _remote.requestConnection();
-            isAutoConnecting = false;
-        }
+        private List<string> _lookAtOptions;
         
         private void Awake()
         {
@@ -117,6 +103,7 @@ namespace raisimUnity
                 var okButton = modal.GetComponentInChildren<Button>();
                 okButton.onClick.AddListener(() => { modal.enabled = false;});
             }
+            
             
             // visualize section
             {
@@ -237,24 +224,6 @@ namespace raisimUnity
                 });
             }
             
-            // background section 
-            {
-                _daySky = Resources.Load<Material>("backgrounds/Wispy Sky/Materials/WispySkyboxMat2");
-                _sunriseSky = Resources.Load<Material>("backgrounds/Wispy Sky/Materials/WispySkyboxMat");
-                _sunsetSky = Resources.Load<Material>("backgrounds/Skybox/Materials/Skybox_Sunset");
-                _nightSky = Resources.Load<Material>("backgrounds/FreeNightSky/Materials/nightsky1");
-                _milkywaySky = Resources.Load<Material>("backgrounds/MilkyWay/Material/MilkyWay");
-                _whiteSky = Resources.Load<Material>("backgrounds/whiteSky");
-
-                RenderSettings.skybox=_daySky;
-
-                var backgroundDropdown = GameObject.Find(_DropdownBackgroundName).GetComponent<Dropdown>();
-                backgroundDropdown.onValueChanged.AddListener(delegate {
-                    ChangeBackground(backgroundDropdown);
-                    DynamicGI.UpdateEnvironment();
-                });
-            }
-            
             // resource section 
             {
                 _remote.ResourceLoader.LoadFromPref();
@@ -311,83 +280,62 @@ namespace raisimUnity
             return RetVal;
         }
         
-        private void ChangeBackground(Dropdown dropdown)
+        private void ChangeLookAt(Dropdown dropdown)
         {
-            switch (dropdown.value)
+            if (dropdown.value != 0)
             {
-            case 0:
-                // day
-                RenderSettings.skybox=_daySky;
-                break;
-            case 1:
-                // sunrise
-                RenderSettings.skybox=_sunriseSky;
-                break;
-            case 2:
-                // sunset
-                RenderSettings.skybox=_sunsetSky;
-                break;
-            case 3:
-                // night
-                RenderSettings.skybox=_nightSky;
-                break;
-            case 4:
-                // milkyway
-                RenderSettings.skybox=_milkywaySky;
-                break;
-            case 5:
-                // milkyway
-                RenderSettings.skybox=_whiteSky;
-                break;
-            default:
-                // TODO error
-                break;
+                _camera.Follow(_lookAtOptions[dropdown.value]);
             }
+            else
+            {
+                _camera._selected = null;
+            }
+        }
+
+        public void ConstructLookAt()
+        {
+            var LookAtDropdown = GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>();
+            _lookAtOptions = new List<string> ();
+            _lookAtOptions.Add("Free Cam");
+            foreach (var option in _remote._objName) {
+                _lookAtOptions.Add(option.Key); // Or whatever you want for a label
+            }
+            
+            LookAtDropdown.ClearOptions ();
+            LookAtDropdown.AddOptions(_lookAtOptions);
+
+            LookAtDropdown.onValueChanged.AddListener(delegate {
+                ChangeLookAt(LookAtDropdown);
+                DynamicGI.UpdateEnvironment();
+            });
         }
         
         // GUI
         void OnGUI()
         {
             // Set style once
-            if( _style==null )
+            if (_style == null)
             {
                 _style = GUI.skin.textField;
                 _style.normal.textColor = Color.white;
-        
+
                 // scale font size with DPI
-                if( Screen.dpi<100 )
+                if (Screen.dpi < 100)
                     _style.fontSize = 14;
-                else if( Screen.dpi>300 )
+                else if (Screen.dpi > 300)
                     _style.fontSize = 34;
                 else
-                    _style.fontSize = Mathf.RoundToInt(14 + (Screen.dpi-100.0f)*0.1f);
+                    _style.fontSize = Mathf.RoundToInt(14 + (Screen.dpi - 100.0f) * 0.1f);
             }
-        
-            // Show connected status
-            var connectButton = GameObject.Find(_ButtonConnectName).GetComponent<Button>();
 
-            if (_remote.TcpConnected)
+            if (_camera._selected == null)
             {
-                if (_remote.IsServerHibernating)
-                {
-                    GUILayout.Label("Connected: server is hibernating", _style);
-                }
-                else
-                {
-                    GUILayout.Label("Connected: update", _style);
-                }
-                connectButton.GetComponentInChildren<Text>().text = "Disconnect";
-            }
-            else if (isAutoConnecting)
-            {
-                connectButton.GetComponentInChildren<Text>().text = "AutoConnecting...";
-            }
-            else
-            {
-                GUILayout.Label("Waiting for connection", _style);
-                connectButton.GetComponentInChildren<Text>().text = "Connect";
+                var LookAtDropdown = GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>();
+                LookAtDropdown.value = 0;
             }
             
+            GUILayout.Label(_state, _style);
+
             // Show recording status
             var recordButton = GameObject.Find(_ButtonRecordName);
             
@@ -420,25 +368,34 @@ namespace raisimUnity
                 // connect / disconnect
                 if (!_remote.TcpConnected)
                 {
-                    if (connectionTryCounter++ % 250 == 0)
+                    if (connectionTryCounter++ % 120 == 0)
                     {
                         try
                         {
+                            isAutoConnecting = true;
                             _remote.EstablishConnection(100);
+                            isAutoConnecting = false;
                         }
                         catch (Exception e)
                         {
+                            isAutoConnecting = false;
                             var modal = GameObject.Find(_ErrorModalViewName).GetComponent<ErrorViewController>();
                             modal.Show(true);
                             modal.SetMessage(e.Message);
                         }
-                    }                    
+                    }
                 }
+                isAutoConnecting = false;
             }
 
             // Escape
-            if(Input.GetKey("escape"))
+            if (Input.GetKey("escape"))
                 Application.Quit();
+        }
+        
+        public void setSTate(string state)
+        {
+            _state = state;
         }
     }
 }

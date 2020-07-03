@@ -62,6 +62,27 @@ namespace raisimUnity
             _table = new Dictionary<string, Appearances>();
         }
 
+        public static Vector3 GetXyzVector3(XmlNode node)
+        {
+            var xlength = node.Attributes["x"];
+            if (xlength == null)
+            {
+                new RsuException("missing x position");
+            }
+            var ylength = node.Attributes["y"];
+            if (ylength == null)
+            {
+                new RsuException("missing y position");
+            }
+            var zlength = node.Attributes["z"];
+            if (zlength == null)
+            {
+                new RsuException("missing z position");
+            }
+                            
+            return new Vector3(float.Parse(xlength.Value), float.Parse(ylength.Value), float.Parse(zlength.Value));
+        }
+
         public void CreateApperanceMap(XmlDocument xmlDocument)
         {
             // find appearance element under object
@@ -88,14 +109,14 @@ namespace raisimUnity
                     if (matPerAppearance != null) appearance.materialName = matPerAppearance.Value;
 
                     switch (shape)
-                    {
+                    {    
                         case "sphere":
                         {
                             appearance.shapes = AppearanceShapes.Sphere;
                             var radius = app.Attributes["radius"];
                             if (radius == null)
                             {
-                                // TODO error
+                                new RsuException("sphere appearance is missing radius");
                             }
                             appearance.dimension = new Vector3(float.Parse(radius.Value), 0, 0);
                         }
@@ -103,20 +124,20 @@ namespace raisimUnity
                         case "box":
                         {
                             appearance.shapes = AppearanceShapes.Box;
-                            var xlength = app.Attributes["xLength"];
+                            var xlength = app.Attributes["x"];
                             if (xlength == null)
                             {
-                                // TODO error
+                                new RsuException("box appearance is missing x");
                             }
-                            var ylength = app.Attributes["yLength"];
+                            var ylength = app.Attributes["y"];
                             if (ylength == null)
                             {
-                                // TODO error
+                                new RsuException("box appearance is missing y");
                             }
-                            var zlength = app.Attributes["zLength"];
+                            var zlength = app.Attributes["z"];
                             if (zlength == null)
                             {
-                                // TODO error
+                                new RsuException("box appearance is missing z");
                             }
                             
                             appearance.dimension = new Vector3(float.Parse(xlength.Value), float.Parse(ylength.Value), float.Parse(zlength.Value));
@@ -128,12 +149,12 @@ namespace raisimUnity
                             var radius = app.Attributes["radius"];
                             if (radius == null)
                             {
-                                // TODO error
+                                new RsuException("cylinder appearance is missing radius");
                             }
                             var length = app.Attributes["length"];
                             if (length == null)
                             {
-                                // TODO error
+                                new RsuException("cylinder appearance is missing length");
                             }
                             appearance.dimension = new Vector3(float.Parse(radius.Value), float.Parse(length.Value), 0);
                         }
@@ -144,12 +165,12 @@ namespace raisimUnity
                             var radius = app.Attributes["radius"];
                             if (radius == null)
                             {
-                                // TODO error
+                                new RsuException("capsule appearance is missing radius");
                             }
                             var length = app.Attributes["length"];
                             if (length == null)
                             {
-                                // TODO error
+                                new RsuException("capsule appearance is missing length");
                             }
                             appearance.dimension = new Vector3(float.Parse(radius.Value), float.Parse(length.Value), 0);
                         }
@@ -167,7 +188,7 @@ namespace raisimUnity
                             var fileName = app.Attributes["fileName"];
                             if (fileName == null)
                             {
-                                // TODO error
+                                new RsuException("mesh appearance is missing fileName");
                             }
                             appearance.fileName = fileName.Value;
                         }

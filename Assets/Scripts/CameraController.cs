@@ -46,10 +46,11 @@ public class CameraController : MonoBehaviour
     private Vector3 _relativePositionB;
 
     // object selection
-    private GameObject _selected; 
+    public GameObject _selected; 
 
     // video recording
     private bool _isRecording = false;
+
     public bool IsRecording
     {
         get => _isRecording;
@@ -94,9 +95,26 @@ public class CameraController : MonoBehaviour
     // UI
     private int _visibleUI = 0;
     
+    // object to follow
+    private string _toFollow="";
+    
+    // easy access
+    private RsUnityRemote _remote;
+    
     public bool ThreadIsProcessing
     {
         get => threadIsProcessing;
+    }
+
+    public void Follow(string obj, Vector3 pos)
+    {
+        _toFollow = obj;
+        _relativePositionB = pos;
+    }
+    
+    public void Follow(string obj)
+    {
+        _toFollow = obj;
     }
 
     private void Awake()
@@ -120,6 +138,8 @@ public class CameraController : MonoBehaviour
         _helpUI = GameObject.Find("_CanvasHelpUI").GetComponent<HelpUIController>();
         _sidebar.gameObject.GetComponent<Canvas>().enabled = true;
         _helpUI.gameObject.GetComponent<Canvas>().enabled = false;
+        _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
+
     }
 
     void Start () 
@@ -149,6 +169,14 @@ public class CameraController : MonoBehaviour
     }
 
     void Update() {
+        if (!string.IsNullOrEmpty(_toFollow))
+        {
+            _selected = GameObject.Find(_remote.GetSubName(_toFollow));
+            if (_selected != null)
+            {
+                _toFollow = "";
+            }
+        }
         
         // move by keyboard
         if (_selected == null)
@@ -168,7 +196,7 @@ public class CameraController : MonoBehaviour
                 move -= Vector3.up * speed;
             transform.Translate(move);
         }
-        
+
         if (Input.GetKeyUp(KeyCode.F1))
         {
             _visibleUI++;
@@ -221,41 +249,8 @@ public class CameraController : MonoBehaviour
                     // Change shader for selected object
                     foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
                     {
-                        ren.material.shader = Shader.Find("Outlined/UltimateOutline");
+                        ren.material.shader = Shader.Find("Standard");
                     }
-                }
-            }
-
-            // swich objects views by arrow keys
-            bool changeSelected = false;
-            int prevSelectedNumber = selectedNumber_;
-            GameObject prevSelected = _selected;
-
-            if (Input.GetKeyUp(KeyCode.RightArrow))
-            {
-                selectedNumber_++;
-                changeSelected = true;
-            } else if (Input.GetKeyUp(KeyCode.LeftArrow))
-            {
-                selectedNumber_--;
-                changeSelected = true;
-            }
-
-            if (changeSelected)
-            {
-                _selected = GameObject.Find(selectedNumber_ + "/0/0");
-                if (!_selected)
-                {
-                    _selected = GameObject.Find(selectedNumber_.ToString());    
-                }
-
-                transform.rotation = Quaternion.LookRotation(_selected.transform.position - transform.position);
-                _relativePositionB = Quaternion.Inverse(transform.rotation) * (_selected.transform.position - transform.position);
-                
-                if (!_selected)
-                {
-                    selectedNumber_ = prevSelectedNumber;
-                    _selected = prevSelected;
                 }
             }
 
@@ -292,37 +287,45 @@ public class CameraController : MonoBehaviour
                 _anchorRot = transform.rotation;
             }
             
-            // Set anchor for orbiting around selected object  
+            if (Input.GetMouseButton(0) && _selected != null)
+            {
+                Vector3 dif = _anchorPoint - new Vector3(Input.mousePosition.y, -Input.mousePosition.x);
+                Vector3 normRelPos = _relativePositionB.normalized;
+                Vector3 crossed = new Vector3(normRelPos[2], 0, -normRelPos[0]);
+                
+                Quaternion rot1 = Quaternion.AngleAxis(sensitivity * dif[1], new Vector3(0, 1, 0));
+                Quaternion rot2 = Quaternion.AngleAxis(sensitivity * -dif[0], crossed.normalized);
+                
+                var newPos = rot2 * rot1 * _relativePositionB;
+                _relativePositionB = newPos;
+                
+                _anchorPoint = new Vector3(Input.mousePosition.y, -Input.mousePosition.x);
+                _anchorRot = transform.rotation;
+            }
+            
+            // zoom in and out
             if (Input.GetAxis("Mouse ScrollWheel") > 0f  && _selected != null)
             {
-                Vector3 move = Vector3.zero;
-                move += Vector3.forward * _relativePositionB.magnitude;
-                move.Scale(new Vector3(0.15f, 0.15f, 0.15f));
-                _relativePositionB += move;
+                _relativePositionB *= 1.15f;
             }
             
             if (Input.GetAxis("Mouse ScrollWheel") < 0f  && _selected != null)
             {
-                Vector3 move = Vector3.zero;
-                move -= Vector3.forward * _relativePositionB.magnitude;
-                move.Scale(new Vector3(0.15f, 0.15f, 0.15f));
-                _relativePositionB += move;
-            }
-            
-            if (Input.GetMouseButton(0) && _selected != null)
-            {
-                Quaternion rot = _anchorRot;
-                Vector3 dif = _anchorPoint - new Vector3(Input.mousePosition.y, -Input.mousePosition.x);
-                rot.eulerAngles += dif * sensitivity;
-                transform.rotation = rot;
+                _relativePositionB /= 1.15f;
             }
         }
         
         // Follow and orbiting around selected object  
         if (_selected != null)
         {
-            transform.position = _selected.transform.position - transform.rotation * _relativePositionB;
+            transform.position = _selected.transform.position + _relativePositionB;
+            transform.transform.LookAt(_selected.transform.position);
         }
+        
+        var position = transform.position;
+        position.y *= -1.0f;
+        GameObject.Find("Reflection Probe").GetComponent<reflectionProbe>().transform.position = position;
+        GameObject.Find("Reflection Probe").GetComponent<ReflectionProbe>().RenderProbe();
     }
     
     void OnRenderImage(RenderTexture source, RenderTexture destination)

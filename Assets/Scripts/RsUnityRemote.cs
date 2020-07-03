@@ -97,12 +97,14 @@ namespace raisimUnity
         private XmlReader _xmlReader;
         private ResourceLoader _loader;
         private TcpHelper _tcpHelper;
+        public Dictionary<string, string> _objName;
         
         private RsUnityRemote()
         {
             _tcpHelper = new TcpHelper();
             _xmlReader = new XmlReader();
             _loader = new ResourceLoader();
+            _objName = new Dictionary<string, string>();
         }
         
         public static RsUnityRemote Instance
@@ -163,7 +165,8 @@ namespace raisimUnity
         
         // Configuration number (should be always matched with server)
         private ulong _objectConfiguration = 0; 
-        private ulong _visualConfiguration = 0; 
+        private ulong _visualConfiguration = 0;
+        private CameraController _camera = null;
         
         void Awake()
         {
@@ -178,14 +181,15 @@ namespace raisimUnity
             _contactPointsRoot.transform.SetParent(transform);
             _contactForcesRoot = new GameObject("_ContactForces");
             _contactForcesRoot.transform.SetParent(transform);
-
+            _camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
+            
             // object controller 
             _objectController = new ObjectController(_objectCache);
 
             // shaders
             _standardShader = Shader.Find("Standard");
             _transparentShader = Shader.Find("RaiSim/Transparent");
-            
+
             // materials
             _planeMaterial = Resources.Load<Material>("Tiles1");
             _terrainMaterial = Resources.Load<Material>("white");
@@ -223,6 +227,10 @@ namespace raisimUnity
             if( !_tcpHelper.CheckConnection() )
             {
                 CloseConnection();
+            }
+            else
+            {
+                _errorModalView.Show(false);
             }
 
             // Data available: handle communication
@@ -269,7 +277,7 @@ namespace raisimUnity
                             try
                             {
                                 _loadingModalView.Show(true);
-                                _loadingModalView.SetTitle("Initializing RaiSim Objects");
+                                _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
                                 _loadingModalView.SetMessage("Loading resources...");
                                 _loadingModalView.SetProgress(0);
 
@@ -324,6 +332,7 @@ namespace raisimUnity
                                     // Initialization done 
                                     _loadingModalView.Show(false);
                                     _clientStatus = ClientStatus.InitializeVisualsStart;
+                                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructLookAt();
                                 }
                                 else
                                 {
@@ -502,6 +511,8 @@ namespace raisimUnity
 
                                     // Show / hide objects
                                     ShowOrHideObjects();
+                                    
+                                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructLookAt();
                                 }
                                 else
                                 {
@@ -591,7 +602,8 @@ namespace raisimUnity
                                 {
                                     // Reinitialization done 
                                     _clientStatus = ClientStatus.UpdateVisualPosition;
-                                
+
+
                                     // Disable other cameras than main camera
                                     foreach (var cam in Camera.allCameras)
                                     {
@@ -662,8 +674,10 @@ namespace raisimUnity
             _loadingModalView.Show(false);
             
             // clear object cache
-            _objectController.ClearCache();
+            _objName.Clear();
 
+            _objectController.ClearCache();
+            
             _tcpHelper.Flush();
         }
 
@@ -691,6 +705,7 @@ namespace raisimUnity
                 
                 // get name and find corresponding appearance from XML
                 string name = _tcpHelper.GetDataString();
+                
                 Appearances? appearances = _xmlReader.FindApperancesFromObjectName(name);
                 
                 if (objectType == RsObejctType.RsArticulatedSystemObject)
@@ -699,6 +714,11 @@ namespace raisimUnity
 
                     // visItem = 0 (visuals)
                     // visItem = 1 (collisions)
+                    if (name != "" && !_objName.ContainsKey(name))
+                    {
+                        _objName.Add(name, objectIndex.ToString() + "/0/0");    
+                    }
+
                     for (int visItem = 0; visItem < 2; visItem++)
                     {
                         ulong numberOfVisObjects = _tcpHelper.GetDataUlong();
@@ -796,6 +816,11 @@ namespace raisimUnity
                 }
                 else if (objectType == RsObejctType.RsHalfSpaceObject)
                 {
+                    if (name != "" && !_objName.ContainsKey(name))
+                    {
+                        _objName.Add(name, objectIndex.ToString());    
+                    }
+
                     // get material
                     Material material;
                     if (appearances != null && !string.IsNullOrEmpty(appearances.As<Appearances>().materialName))
@@ -818,12 +843,18 @@ namespace raisimUnity
                     {
                         var planeVis = _objectController.CreateHalfSpace(objFrame, height);
                         planeVis.GetComponentInChildren<Renderer>().material = material;
-                        planeVis.GetComponentInChildren<Renderer>().material.mainTextureScale = new Vector2(20, 20);
+                        planeVis.GetComponentInChildren<Renderer>().material.mainTextureScale = new Vector2(15, 15);
                         planeVis.tag = VisualTag.Visual;
+                        planeVis.name = "halfspace_viz";
                     }
                 }
                 else if (objectType == RsObejctType.RsHeightMapObject)
                 {
+                    if (name != "" && !_objName.ContainsKey(name))
+                    {
+                        _objName.Add(name, objectIndex.ToString());    
+                    }
+                    
                     // get material
                     Material material;
                     if (appearances != null && !string.IsNullOrEmpty(appearances.As<Appearances>().materialName))
@@ -873,6 +904,11 @@ namespace raisimUnity
                 }
                 else
                 {
+                    if (name != "" && !_objName.ContainsKey(name))
+                    {
+                        _objName.Add(name, objectIndex.ToString());    
+                    }
+                    
                     // single body object
                     
                     // create base frame of object
@@ -1326,7 +1362,7 @@ namespace raisimUnity
                     if (_showContactForces)
                     {
                         _objectController.CreateContactForceMarker(
-                            _contactForcesRoot, (int) i, contact.Item1, contact.Item2 / forceMaxNorm,
+                            _contactForcesRoot, (int) i, contact.Item1, contact.Item2 / (forceMaxNorm+1e-6f),
                             _contactForceMarkerScale);
                     }
                 }
@@ -1362,11 +1398,28 @@ namespace raisimUnity
             string xmlString = _tcpHelper.GetDataString();
 
             XmlDocument xmlDoc = new XmlDocument();
-            // if (xmlDoc != null)
-            // {
-            //     xmlDoc.LoadXml(xmlString);
-            //     _xmlReader.CreateApperanceMap(xmlDoc);
-            // }
+            if (xmlDoc != null)
+            {
+                xmlDoc.LoadXml(xmlString);
+                _xmlReader.CreateApperanceMap(xmlDoc);
+
+                XmlNode cameraNode = xmlDoc.DocumentElement.SelectSingleNode("/raisim/camera");
+                
+                if(cameraNode != null)
+                    _camera.Follow(cameraNode.Attributes["follow"].Value, XmlReader.GetXyzVector3(cameraNode));
+            }
+        }
+
+        public string GetSubName(string name)
+        {
+            if (_objName.ContainsKey(name))
+            {
+                return _objName[name];
+            }
+            else
+            {
+                return "";
+            }
         }
 
         void OnApplicationQuit()
