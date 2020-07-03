@@ -368,7 +368,7 @@ namespace raisimUnity
                 // connect / disconnect
                 if (!_remote.TcpConnected)
                 {
-                    if (connectionTryCounter++ % 120 == 0)
+                    if (connectionTryCounter++ % 60 == 0)
                     {
                         try
                         {

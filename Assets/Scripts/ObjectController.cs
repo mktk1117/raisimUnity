@@ -28,6 +28,7 @@ using System.IO;
 using System.Xml;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Timeline;
 using UnityMeshImporter;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
@@ -416,13 +417,13 @@ namespace raisimUnity
             marker.tag = "contact";
             marker.name = "contactForce" + index.ToString();
             
-            Vector3 axis = new Vector3(-force.z,0, force.x);
+            Vector3 axis = new Vector3(force.x, force.z, force.y);
             axis.Normalize();
-            float angle = (float)(Math.Acos(force.y/force.magnitude) * 180 / Math.PI);
-            Quaternion q = new Quaternion(0, 0, 0, 1);
-            q = Quaternion.AngleAxis(angle, axis);
-
-            SetTransform(marker, rsPos, q);
+            
+            marker.transform.localPosition = new Vector3(-rsPos.x, rsPos.z, -rsPos.y);
+            Quaternion q = new Quaternion(); 
+            q.SetLookRotation(axis, new Vector3(1,0,0));
+            marker.transform.localRotation = q;
             marker.transform.localScale = new Vector3(
                 0.3f * markerScale * force.magnitude, 
                 0.3f * markerScale * force.magnitude,

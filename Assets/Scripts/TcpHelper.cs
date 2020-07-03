@@ -89,6 +89,8 @@ namespace raisimUnity
 
         public bool TryConnection()
         {
+            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/TryConnection");
+
             // create tcp client and stream
             if (_client == null || !_client.Connected)
             {

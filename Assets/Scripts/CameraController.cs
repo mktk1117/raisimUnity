@@ -91,6 +91,9 @@ public class CameraController : MonoBehaviour
     private ErrorViewController _errorModalView;
     private UIController _sidebar;
     private HelpUIController _helpUI;
+
+    private Vector3 targetPos;
+    private Vector3 currentPos;
     
     // UI
     private int _visibleUI = 0;
@@ -318,7 +321,10 @@ public class CameraController : MonoBehaviour
         // Follow and orbiting around selected object  
         if (_selected != null)
         {
-            transform.position = _selected.transform.position + _relativePositionB;
+            targetPos = _selected.transform.position + _relativePositionB;
+            currentPos = 0.3f * targetPos + 0.7f * transform.position;
+            
+            transform.position = currentPos;
             transform.transform.LookAt(_selected.transform.position);
         }
         
@@ -542,7 +548,7 @@ public class CameraController : MonoBehaviour
                 "-c \"" +
                 "ffmpeg -r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgb24 -s " + _screenWidth.ToString() + "x" +
                 _screenHeight.ToString() +
-                " -i - -threads 0 -preset fast -y " +
+                " -i - -threads 0 -preset fast -y -c:v libx264 " +
                 "-crf 21 " + path + "\"";
         
             ffmpegProc.OutputDataReceived += new DataReceivedEventHandler((s, e) => 

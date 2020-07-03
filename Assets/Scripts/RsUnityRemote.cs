@@ -200,6 +200,9 @@ namespace raisimUnity
             // ui controller 
             _errorModalView = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
             _loadingModalView = GameObject.Find("_CanvasModalViewLoading").GetComponent<LoadingViewController>();
+            
+            // set to 60fps
+            Application.targetFrameRate = 60;
         }
 
         void Start()
@@ -602,7 +605,6 @@ namespace raisimUnity
                                 {
                                     // Reinitialization done 
                                     _clientStatus = ClientStatus.UpdateVisualPosition;
-
 
                                     // Disable other cameras than main camera
                                     foreach (var cam in Camera.allCameras)
