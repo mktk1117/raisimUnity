@@ -140,6 +140,14 @@ namespace raisimUnity
             capsule.transform.localScale = new Vector3(radius*2f, height*0.5f+radius, radius*2f);
             return capsule;
         }
+        
+        public GameObject CreateArrow(GameObject root, float radius, float height)
+        {
+            var arrow = GameObject.Instantiate(_arrowMesh);
+            arrow.transform.SetParent(root.transform, true);
+            arrow.transform.localScale = new Vector3(radius, radius, height);
+            return arrow;
+        }
 
         public GameObject CreateHalfSpace(GameObject root, float height)
         {

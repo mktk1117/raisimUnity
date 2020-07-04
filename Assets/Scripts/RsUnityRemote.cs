@@ -80,6 +80,7 @@ namespace raisimUnity
         RsVisualCylinder,
         RsVisualCapsule,
         RsVisualMesh,
+        RsVisualArrow
     }
 
     static class VisualTag
@@ -503,7 +504,7 @@ namespace raisimUnity
                                 else if (_numInitializedObjects == _numWorldObjects)
                                 {
                                     // Reinitialization done 
-                                    _clientStatus = ClientStatus.UpdateObjectPosition;
+                                    _clientStatus = ClientStatus.ReinitializeVisualsStart;
                                 
                                     // Disable other cameras than main camera
                                     foreach (var cam in Camera.allCameras)
@@ -525,32 +526,9 @@ namespace raisimUnity
                             {
                                 new RsuException(e, "RsUnityRemote: ReinitializingObjects");
                             }
-                            
-
                             break;
                         }
-                        //**********************************************************************************************
-                        // Step 5-2
-                        //**********************************************************************************************
-                        case ClientStatus.UpdateVisualPosition:
-                        {
-                            try
-                            {
-                                // Update visuals
-                                UpdateVisualsPosition();
                         
-                                // Update contacts
-                                UpdateContacts();
-                            
-                                // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeVisualsStart  
-                                // Else clientStatus is updated to UpdateObjectPosition
-                            } catch (Exception e)
-                            {
-                                new RsuException(e, "RsUnityRemote: UpdateVisualPosition");
-                            }
-
-                            break;
-                        }
                         case ClientStatus.ReinitializeVisualsStart:
                         {
                             try
@@ -604,7 +582,7 @@ namespace raisimUnity
                                 else if (_numInitializedVisuals == _numWorldVisuals)
                                 {
                                     // Reinitialization done 
-                                    _clientStatus = ClientStatus.UpdateVisualPosition;
+                                    _clientStatus = ClientStatus.UpdateObjectPosition;
 
                                     // Disable other cameras than main camera
                                     foreach (var cam in Camera.allCameras)
@@ -1126,6 +1104,14 @@ namespace raisimUnity
                         visual.tag = VisualTag.Visual;
                     }
                         break;
+                    case RsVisualType.RsVisualArrow:
+                    {
+                        float radius = _tcpHelper.GetDataFloat();
+                        float height = _tcpHelper.GetDataFloat();
+                        visual = _objectController.CreateArrow(visFrame, radius, height);
+                        visual.tag = VisualTag.Visual;
+                    }
+                        break;
                 }
                 
                 // set material or color
@@ -1229,45 +1215,8 @@ namespace raisimUnity
                 }
             }
             
-            // Update object position done.
-            // Go to visual object position update
-            _clientStatus = ClientStatus.UpdateVisualPosition;
-        }
-
-        private void UpdateVisualsPosition()
-        {
-            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestVisualPosition));
-            if (_tcpHelper.ReadData() <= 0)
-                new RsuException("Cannot read data from TCP");
-
-            ServerStatus state = _tcpHelper.GetDataServerStatus();
-            if (state == ServerStatus.StatusTerminating)
-                new RsuException("Server is terminating");
-            else if (state == ServerStatus.StatusHibernating)
-            {
-                _clientStatus = ClientStatus.Idle;
-                return;
-            }
-
-            ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-            if (messageType == ServerMessageType.NoMessage)
-            {
-                new RsuException("The server sends a wrong message");
-            }
-            if (messageType != ServerMessageType.VisualPositionUpdate)
-            {
-                new RsuException("The server sends a wrong message");
-            }
-            
-            ulong configurationNumber = _tcpHelper.GetDataUlong();
-            if (configurationNumber != _visualConfiguration)
-            {
-                // this means the object was added or deleted from server size
-                _clientStatus = ClientStatus.ReinitializeVisualsStart;
-                return;
-            }
-            
-            ulong numObjects = _tcpHelper.GetDataUlong();
+            // visual objects
+            numObjects = _tcpHelper.GetDataUlong();
 
             for (ulong i = 0; i < numObjects; i++)
             {
