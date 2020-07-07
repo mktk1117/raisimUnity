@@ -77,7 +77,7 @@ namespace raisimUnity
             // find a full mesh path from client side.
             // return null if it cannot find the file.
             var indexOfSlash = meshNameRaw.LastIndexOf("/");
-            var startIndex = indexOfSlash > -1 ? indexOfSlash : 0;
+            var startIndex = indexOfSlash > -1 ? indexOfSlash + 1 : 0;
             var meshName = meshNameRaw.Substring(startIndex);
             var parent = Directory.GetParent(meshDirPathInServer).FullName;    // .../rsc/robot/alma
             var grandParent = Directory.GetParent(parent).FullName;            // .../rsc/robot
