@@ -36,7 +36,8 @@ namespace raisimUnity
         
         private float _anchorXMin = 0;
         private float _anchorXMax = 0;
-        void Awake()
+
+        void Start()
         {
             _progressBar = GameObject.Find("_FillbarForeground");
             _title = GameObject.Find("_TextLoadingTitle");
@@ -49,10 +50,6 @@ namespace raisimUnity
             _anchorXMin = anchorMin.x;
             
             _progressBar.GetComponent<RectTransform>().anchorMax = new Vector2(_anchorXMin, 0);
-        }
-
-        void Start()
-        {
             gameObject.GetComponent<Canvas>().enabled = false;
         }
 

@@ -108,20 +108,6 @@ namespace raisimUnity
             _objName = new Dictionary<string, string>();
         }
         
-        public static RsUnityRemote Instance
-        {
-            get 
-            {
-                if( instance==null )
-                {
-                    instance = new RsUnityRemote();
-                    return instance;
-                }
-                else
-                    throw new System.Exception("TCPRemote can only be instantiated once");
-            }
-        }
-        
         // Status
         private ClientStatus _clientStatus;
 
@@ -168,8 +154,8 @@ namespace raisimUnity
         private ulong _objectConfiguration = 0; 
         private ulong _visualConfiguration = 0;
         private CameraController _camera = null;
-        
-        void Awake()
+
+        void Start()
         {
             // object roots
             _objectsRoot = new GameObject("_RsObjects");
@@ -187,7 +173,7 @@ namespace raisimUnity
             // object controller 
             _objectController = new ObjectController(_objectCache);
 
-            // shaders
+            // shaders 
             _standardShader = Shader.Find("Standard");
             _transparentShader = Shader.Find("RaiSim/Transparent");
 
@@ -204,10 +190,6 @@ namespace raisimUnity
             
             // set to 60fps
             Application.targetFrameRate = 60;
-        }
-
-        void Start()
-        {
             _clientStatus = ClientStatus.Idle;
         }
 
@@ -441,6 +423,7 @@ namespace raisimUnity
                             {
                                 // update object position
                                 UpdateObjectsPosition();
+                                UpdateContacts();
                             
                                 // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
                                 // Else clientStatus is updated to UpdateVisualPosition

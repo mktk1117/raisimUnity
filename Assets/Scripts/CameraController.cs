@@ -89,8 +89,8 @@ public class CameraController : MonoBehaviour
     // Error modal view
     private const string _ErrorModalViewName = "_CanvasModalViewError";
     private ErrorViewController _errorModalView;
-    private UIController _sidebar;
-    private HelpUIController _helpUI;
+    private GameObject _sidebar;
+    private GameObject _helpUI;
 
     private Vector3 targetPos;
     private Vector3 currentPos;
@@ -119,8 +119,8 @@ public class CameraController : MonoBehaviour
     {
         _toFollow = obj;
     }
-
-    private void Awake()
+    
+    void Start () 
     {
         cam = GetComponent<Camera>();
         
@@ -137,16 +137,12 @@ public class CameraController : MonoBehaviour
         if (!File.Exists(_dirPath))
             Directory.CreateDirectory(_dirPath);
         
-        _sidebar = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
-        _helpUI = GameObject.Find("_CanvasHelpUI").GetComponent<HelpUIController>();
-        _sidebar.gameObject.GetComponent<Canvas>().enabled = true;
-        _helpUI.gameObject.GetComponent<Canvas>().enabled = false;
+        _sidebar = GameObject.Find("_CanvasSidebar");
+        _helpUI = GameObject.Find("_CanvasHelpUI");
+        GameObject.Find("_CanvasSidebar").GetComponent<Canvas>().enabled = true;
+        GameObject.Find("_CanvasHelpUI").GetComponent<Canvas>().enabled = false;
         _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
-
-    }
-
-    void Start () 
-    {
+        
         // Set target frame rate (optional)
         Application.targetFrameRate = frameRate;
         _relativePositionB = new Vector3(1.0f,1.0f,1.0f);
@@ -203,8 +199,8 @@ public class CameraController : MonoBehaviour
         if (Input.GetKeyUp(KeyCode.F1))
         {
             _visibleUI++;
-            _sidebar.gameObject.GetComponent<Canvas>().enabled = false;
-            _helpUI.gameObject.GetComponent<Canvas>().enabled = false;
+            _sidebar.GetComponent<Canvas>().enabled = false;
+            _helpUI.GetComponent<Canvas>().enabled = false;
             switch (_visibleUI)
             {
                 case 0:

@@ -32,14 +32,10 @@ namespace raisimUnity
         private GameObject _title;
         private GameObject _message;
         
-        void Awake()
+        void Start()
         {
             _title = GameObject.Find("_TextErrorTitle");
             _message = GameObject.Find("_TextErrorMessage");
-        }
-
-        void Start()
-        {
             gameObject.GetComponent<Canvas>().enabled = false;
         }
 
@@ -56,6 +52,11 @@ namespace raisimUnity
         public void Show(bool show)
         {
             gameObject.GetComponent<Canvas>().enabled = show;
+        }
+
+        public bool isActive()
+        {
+            return gameObject.GetComponent<Canvas>().enabled;
         }
     }
 }

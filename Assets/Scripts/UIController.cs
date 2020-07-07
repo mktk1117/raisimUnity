@@ -40,6 +40,7 @@ namespace raisimUnity
     {
         private RsUnityRemote _remote = null;
         private CameraController _camera = null;
+        private ErrorViewController _error = null;
         private bool isAutoConnecting = false;
         
         static GUIStyle _style = null;
@@ -81,11 +82,12 @@ namespace raisimUnity
 
         private List<string> _lookAtOptions;
         
-        private void Awake()
+        private void Start()
         {
             Application.targetFrameRate = 60;
             _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
             _camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
+            _error = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
 
             if (_remote == null)
             {
@@ -363,12 +365,12 @@ namespace raisimUnity
             
             var connectToggle = GameObject.Find("_AutoConnect").GetComponent<Toggle>();
 
-            if (connectToggle.isOn && !isAutoConnecting)
+            if (!_error.isActive() && connectToggle.isOn && !isAutoConnecting)
             {
                 // connect / disconnect
                 if (!_remote.TcpConnected)
                 {
-                    if (connectionTryCounter++ % 60 == 0)
+                    if (connectionTryCounter++ % 100 == 0)
                     {
                         try
                         {
