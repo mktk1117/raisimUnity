@@ -280,7 +280,7 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
                                 {
-                                    _clientStatus = ClientStatus.Idle;
+                                    _clientStatus = ClientStatus.InitializeObjectsStart;
                                     return;
                                 }
 
@@ -354,7 +354,7 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
                                 {
-                                    _clientStatus = ClientStatus.Idle;
+                                    _clientStatus = ClientStatus.InitializeVisualsStart;
                                     return;
                                 }
 
@@ -455,7 +455,7 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
                                 {
-                                    _clientStatus = ClientStatus.Idle;
+                                    _clientStatus = ClientStatus.ReinitializeObjectsStart;
                                     return;
                                 }
 
@@ -534,7 +534,7 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
                                 {
-                                    _clientStatus = ClientStatus.Idle;
+                                    _clientStatus = ClientStatus.ReinitializeVisualsStart;
                                     return;
                                 }
 
@@ -1141,10 +1141,12 @@ namespace raisimUnity
 
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             if (state == ServerStatus.StatusTerminating)
-                new RsuException("Server is terminating");
+            {
+                return;
+            }
             else if (state == ServerStatus.StatusHibernating)
             {
-                _clientStatus = ClientStatus.Idle;
+                _clientStatus = ClientStatus.UpdateObjectPosition;
                 return;
             }
 
@@ -1246,7 +1248,7 @@ namespace raisimUnity
                 new RsuException("Server is terminating");
             else if (state == ServerStatus.StatusHibernating)
             {
-                _clientStatus = ClientStatus.Idle;
+                _clientStatus = ClientStatus.UpdateObjectPosition;
                 return;
             }
 
