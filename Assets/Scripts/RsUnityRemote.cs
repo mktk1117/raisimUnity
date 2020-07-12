@@ -154,6 +154,9 @@ namespace raisimUnity
         private ulong _objectConfiguration = 0; 
         private ulong _visualConfiguration = 0;
         private CameraController _camera = null;
+        
+        // objects reinitialize
+        private bool _deleteObjects = false;
 
         void Start()
         {
@@ -438,13 +441,7 @@ namespace raisimUnity
                         {
                             try
                             {
-                                // If server side has been changed, initialize objects
-                                // Clear objects first
-                                foreach (Transform objT in _objectsRoot.transform)
-                                {
-                                    Destroy(objT.gameObject);
-                                }
-                            
+                          
                                 // Start reinitializing
                                 _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
                                 if (_tcpHelper.ReadData() <= 0)
@@ -467,6 +464,7 @@ namespace raisimUnity
                                 _numWorldObjects = _tcpHelper.GetDataUlong();
                                 _numInitializedObjects = 0;
                                 _clientStatus = ClientStatus.ReinitializingObjects;
+                                _deleteObjects = true;
                             } catch (Exception e)
                             {
                                 new RsuException(e, "RsUnityRemote: ReinitializeObjectStart");
@@ -478,6 +476,18 @@ namespace raisimUnity
                         {
                             try
                             {
+                                if (_deleteObjects)
+                                {
+                                    // If server side has been changed, initialize objects
+                                    // Clear objects first
+                                    foreach (Transform objT in _objectsRoot.transform)
+                                    {
+                                        Destroy(objT.gameObject);
+                                    }
+
+                                    _deleteObjects = false;
+                                }
+                                
                                 if (_numInitializedObjects < _numWorldObjects)
                                 {
                                     // Reinitialize objects from data
@@ -1026,7 +1036,7 @@ namespace raisimUnity
                 }
 
                 _numInitializedObjects++;
-                if (Time.deltaTime > 0.03f)
+                if (Time.deltaTime > 0.1f)
                     // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
                     break;
             }

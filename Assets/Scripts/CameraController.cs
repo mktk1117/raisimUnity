@@ -69,6 +69,7 @@ public class CameraController : MonoBehaviour
     // Texture Readback Objects
     private RenderTexture _tempRenderTexture;
     private Texture2D _tempTexture2D;
+    private Rect _rect;
 
     // Timing Data
     private float captureFrameTime;
@@ -355,7 +356,7 @@ public class CameraController : MonoBehaviour
                 Graphics.Blit(source, _tempRenderTexture);
 
                 RenderTexture.active = _tempRenderTexture;
-                _tempTexture2D.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+                _tempTexture2D.ReadPixels(_rect, 0, 0, false);
                 FlipTextureVertically(_tempTexture2D);
                 RenderTexture.active = null;
             }
@@ -424,7 +425,8 @@ public class CameraController : MonoBehaviour
 		
         _tempRenderTexture = new RenderTexture(_screenWidth, _screenHeight, 0);
         _tempTexture2D = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGB24, false);
-        
+        _rect = new Rect(0, 0, Screen.width, Screen.height);
+
         // Start recording
         if (threadIsProcessing)
         {
@@ -438,6 +440,7 @@ public class CameraController : MonoBehaviour
         
             // Start a new encoder thread
             _videoName = "Recording-" + DateTime.Now.ToString("yyyy-MM-dd-hh-mm-ss") + ".mp4";
+            lastFrameTime = Time.time - lastFrameTime;
             
             threadIsProcessing = true;
             _saverThread = new Thread(SaveVideo);
@@ -588,8 +591,6 @@ public class CameraController : MonoBehaviour
                     {
                         break;
                     }
-
-                    Thread.Sleep(1);
                 }
             }
         
