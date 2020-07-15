@@ -154,9 +154,13 @@ namespace raisimUnity
         private ulong _objectConfiguration = 0; 
         private ulong _visualConfiguration = 0;
         private CameraController _camera = null;
+        private string _defaultShader = "HDRP/Lit";
         
         // objects reinitialize
         private bool _deleteObjects = false;
+        
+        // request information
+        private bool _requestContactInfo = false;
 
         void Start()
         {
@@ -177,7 +181,7 @@ namespace raisimUnity
             _objectController = new ObjectController(_objectCache);
 
             // shaders 
-            _standardShader = Shader.Find("Standard");
+            _standardShader = Shader.Find(_defaultShader);
             _transparentShader = Shader.Find("RaiSim/Transparent");
 
             // materials
@@ -221,7 +225,7 @@ namespace raisimUnity
             {
                 _errorModalView.Show(false);
             }
-
+     
             // Data available: handle communication
             if (_tcpHelper.DataAvailable)
             {
@@ -422,19 +426,21 @@ namespace raisimUnity
                         //**********************************************************************************************
                         case ClientStatus.UpdateObjectPosition:
                         {
+
                             try
                             {
                                 // update object position
                                 UpdateObjectsPosition();
-                                UpdateContacts();
-                            
+                                
+                                if(_showContactPoints || _showContactForces)
+                                    UpdateContacts();
+
                                 // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
                                 // Else clientStatus is updated to UpdateVisualPosition
                             } catch (Exception e)
                             {
                                 new RsuException(e, "RsUnityRemote: UpdateObjectPosition");
                             }
-
                             break;
                         }
                         case ClientStatus.ReinitializeObjectsStart:
@@ -1173,7 +1179,9 @@ namespace raisimUnity
                 _clientStatus = ClientStatus.ReinitializeObjectsStart;
                 return;
             }
+            
 
+            
             ulong numObjects = _tcpHelper.GetDataUlong();
 
             for (ulong i = 0; i < numObjects; i++)
@@ -1209,7 +1217,7 @@ namespace raisimUnity
                     }
                 }
             }
-            
+
             // visual objects
             numObjects = _tcpHelper.GetDataUlong();
 
@@ -1249,7 +1257,12 @@ namespace raisimUnity
 
         private void UpdateContacts()
         {
+            System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew(); 
+
             _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestContactInfos));
+            sw.Stop();
+            double time = sw.Elapsed.TotalSeconds;
+
             if (_tcpHelper.ReadData() <= 0)
                 new RsuException("Cannot read data from TCP");
             
@@ -1266,52 +1279,6 @@ namespace raisimUnity
             if (messageType != ServerMessageType.ContactInfoUpdate)
             {
                 new RsuException("The server sends a wrong message");
-            }
-            
-            ulong numContacts = _tcpHelper.GetDataUlong();
-
-            // clear contacts 
-            ClearContacts();
-
-            // create contact marker
-            List<Tuple<Vector3, Vector3>> contactList = new List<Tuple<Vector3, Vector3>>();
-            float forceMaxNorm = 0;
-
-            for (ulong i = 0; i < numContacts; i++)
-            {
-                double posX = _tcpHelper.GetDataDouble();
-                double posY = _tcpHelper.GetDataDouble();
-                double posZ = _tcpHelper.GetDataDouble();
-
-                double forceX = _tcpHelper.GetDataDouble();
-                double forceY = _tcpHelper.GetDataDouble();
-                double forceZ = _tcpHelper.GetDataDouble();
-                var force = new Vector3((float) forceX, (float) forceY, (float) forceZ);
-                
-                contactList.Add(new Tuple<Vector3, Vector3>(
-                    new Vector3((float) posX, (float) posY, (float) posZ), force
-                ));
-                
-                forceMaxNorm = Math.Max(forceMaxNorm, force.magnitude);
-            }
-            
-            for (ulong i = 0; i < numContacts; i++)
-            {
-                var contact = contactList[(int) i];
-
-                if (contact.Item2.magnitude > 0)
-                {
-                    if(_showContactPoints)
-                        _objectController.CreateContactMarker(
-                            _contactPointsRoot, (int)i, contact.Item1, _contactPointMarkerScale);
-
-                    if (_showContactForces)
-                    {
-                        _objectController.CreateContactForceMarker(
-                            _contactForcesRoot, (int) i, contact.Item1, contact.Item2 / (forceMaxNorm+1e-6f),
-                            _contactForceMarkerScale);
-                    }
-                }
             }
         }
         

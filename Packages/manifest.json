@@ -1,11 +1,13 @@
 {
   "dependencies": {
-    "com.donghok.meshimporter": "https://github.com/raisim/UnityMeshImporter.git#09da4018e42dc2e976867cfb62f60af7ab96fa3b",
+    "com.donghok.meshimporter": "https://github.com/raisimTech/UnityMeshImporter.git#2133f02c8707778873f8f294c62466ecbe7f05fd",
     "com.unity.collab-proxy": "1.2.16",
     "com.unity.ext.nunit": "1.0.0",
     "com.unity.ide.rider": "1.1.4",
     "com.unity.ide.vscode": "1.2.1",
     "com.unity.quicksearch": "2.0.0",
+    "com.unity.render-pipelines.high-definition": "7.3.1",
+    "com.unity.render-pipelines.high-definition-config": "file:../LocalPackages/com.unity.render-pipelines.high-definition-config",
     "com.unity.test-framework": "1.1.14",
     "com.unity.textmeshpro": "2.0.1",
     "com.unity.timeline": "1.2.6",

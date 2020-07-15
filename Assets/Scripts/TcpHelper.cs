@@ -165,6 +165,7 @@ namespace raisimUnity
         
         public int ReadData()
         {
+
             GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/ReadData");
 
             // Clear buffer first
@@ -184,7 +185,8 @@ namespace raisimUnity
             int[] readHistory = new int[500];
             int readCounter = 0;
             int valread;
-            
+            System.Diagnostics.Stopwatch sw2 = System.Diagnostics.Stopwatch.StartNew(); 
+
             while (footer == Convert.ToByte('c'))
             {
                 _buffer[numBytes + MaxPacketSize - FooterSize] = Convert.ToByte('c');
@@ -202,7 +204,10 @@ namespace raisimUnity
                 footer = _buffer[numBytes - FooterSize];
                 numBytes -= FooterSize;
             }
-
+                                            
+            sw2.Stop();
+            double time2 = sw2.Elapsed.TotalSeconds;
+            
             if (footer != Convert.ToByte('e'))
                 new RsuException("TcpHelper: Read data exception. The footer is not end.");
 
