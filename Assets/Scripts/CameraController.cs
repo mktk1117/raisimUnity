@@ -126,6 +126,15 @@ public class CameraController : MonoBehaviour
         _toFollow = obj;
     }
     
+    void OnEnable()
+    {
+        RenderPipelineManager.endCameraRendering += EndCameraRendering;
+    }
+    void OnDisable()
+    {
+        RenderPipelineManager.endCameraRendering -= EndCameraRendering;
+    }
+    
     void Start () 
     {
         cam = GetComponent<Camera>();
@@ -333,18 +342,20 @@ public class CameraController : MonoBehaviour
         
         var position = transform.position;
         position.y *= -1.0f;
-        GameObject.Find("Reflection Probe").GetComponent<reflectionProbe>().transform.position = position;
-        GameObject.Find("Reflection Probe").GetComponent<ReflectionProbe>().RenderProbe();
+        // GameObject.Find("Reflection Probe").GetComponent<reflectionProbe>().transform.position = position;
+        // GameObject.Find("Reflection Probe").GetComponent<ReflectionProbe>().RenderProbe();
     }
     
-    void OnRenderImage(RenderTexture source, RenderTexture destination)
+    private void EndCameraRendering(ScriptableRenderContext context, Camera camera)
     {
         if (_isRecording)
         {
             // Check if render target size has changed, if so, terminate
-            if(source.width != _screenWidth || source.height != _screenHeight)
+            if(Screen.width != _screenWidth || Screen.height != _screenHeight)
             {
                 FinishRecording();
+                _screenWidth = Screen.width;
+                _screenHeight = Screen.height;
                 
                 // Show error modal view
                 _errorModalView.Show(true);
@@ -370,20 +381,23 @@ public class CameraController : MonoBehaviour
 
             lastFrameTime = thisFrameTime;
         }
+    }
 
+    void OnRenderImage(RenderTexture source, RenderTexture destination)
+    {
+        
         // Passthrough
         Graphics.Blit (source, destination);
     }
     
     void OnCompleteReadback(AsyncGPUReadbackRequest request)
     {
-        //var tex = new Texture2D(Screen.width, Screen.height, TextureFormat.RGBA32, false);
-        //tex.SetPixels32(request.GetData<Color32>().ToArray());
-        //tex.Apply();
-        //FlipTextureVertically(tex);
-        //var data = tex.GetRawTextureData();
-        //_frameQueue.Enqueue(data);
-        //frameNumber++;
+        _tempTexture2D.SetPixels32(request.GetData<Color32>().ToArray());
+        _tempTexture2D.Apply();
+        // FlipTextureVertically(tex);
+        var data = _tempTexture2D.GetRawTextureData();
+        _frameQueue.Enqueue(data);
+        frameNumber++;
     }
     
     private void FlipTextureVertically(Texture2D original)
@@ -550,7 +564,7 @@ public class CameraController : MonoBehaviour
             ffmpegProc.StartInfo.RedirectStandardError = true;
             ffmpegProc.StartInfo.Arguments =
                 "-c \"" +
-                "ffmpeg -r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgba32 -s " + _screenWidth.ToString() + "x" +
+                "ffmpeg -r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgba -s " + _screenWidth.ToString() + "x" +
                 _screenHeight.ToString() +
                 " -i - -threads 0 -preset fast -y -c:v libx264 " +
                 "-crf 21 " + path + "\"";
@@ -586,9 +600,9 @@ public class CameraController : MonoBehaviour
                 {
                     var ffmpegStream = ffmpegProc.StandardInput.BaseStream;
                 
-                    byte[] data = _frameQueue.Dequeue(); 
+                    byte[] data = _frameQueue.Dequeue();
                     ffmpegStream.Write(data, 0, data.Length);
-                    ffmpegStream.Flush();
+                    ffmpegStream.Flush();    
                 }
                 else
                 {
