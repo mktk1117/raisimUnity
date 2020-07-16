@@ -69,14 +69,14 @@ namespace raisimUnity
 
         public void EstablishConnection(int waitTime = 1000)
         {
-            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/EstablishConnection");
+            // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/EstablishConnection");
 
             try
             {
              // create tcp client and stream
                 if (_client == null || !_client.Connected)
                 {
-                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/EstablishConnection: creating a new connection");
+                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState("TcpHelper/EstablishConnection: creating a new connection");
                     _client = new TcpClient(_tcpAddress, _tcpPort);
                     _client.Client.NoDelay = true;
                     _stream = _client.GetStream();
@@ -89,12 +89,12 @@ namespace raisimUnity
 
         public bool TryConnection()
         {
-            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/TryConnection");
+            // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/TryConnection");
 
             // create tcp client and stream
             if (_client == null || !_client.Connected)
             {
-                GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/TryConnection: creating a new connection");
+                // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/TryConnection: creating a new connection");
                 _client = new TcpClient();
                 CancellationToken ct = new CancellationToken(); // Required for "*.Task()" method
                 _client.ConnectAsync(_tcpAddress, _tcpPort).Wait(1000, ct);
@@ -113,7 +113,7 @@ namespace raisimUnity
 
         public void CloseConnection()
         {
-            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/CloseConnection");
+            // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/CloseConnection");
 
             try
             {
@@ -138,7 +138,7 @@ namespace raisimUnity
         
         public bool CheckConnection()
         {
-            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/CheckConnection");
+            // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/CheckConnection");
 
             try
             {
@@ -166,7 +166,7 @@ namespace raisimUnity
         public int ReadData()
         {
 
-            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/ReadData");
+            // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/ReadData");
 
             // Clear buffer first
             Array.Clear(_buffer, 0, MaxBufferSize);
@@ -217,7 +217,7 @@ namespace raisimUnity
 
         public int WriteData(Byte[] data)
         {
-            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/WriteData");
+            // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setSTate("TcpHelper/WriteData");
 
             while (!_stream.CanWrite)
             {

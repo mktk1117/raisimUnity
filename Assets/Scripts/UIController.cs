@@ -395,7 +395,7 @@ namespace raisimUnity
                 Application.Quit();
         }
         
-        public void setSTate(string state)
+        public void setState(string state)
         {
             _state = state;
         }

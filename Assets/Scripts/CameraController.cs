@@ -25,6 +25,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -33,6 +34,7 @@ using raisimUnity;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 
 [RequireComponent(typeof(Camera))]
 public class CameraController : MonoBehaviour
@@ -61,17 +63,14 @@ public class CameraController : MonoBehaviour
 
     // Public Properties
     public int maxFrames; // maximum number of frames you want to record in one video
-    public int frameRate = 30; // number of frames to capture per second
+    public int frameRate = 60; // number of frames to capture per second
     public bool videoAvailable = false;
     
     // The Encoder Thread
     private Thread _saverThread;
 
     // Texture Readback Objects
-    private RenderTexture _tempRenderTexture;
     private Texture2D _tempTexture2D;
-    private Color[] _rawTexture, _newPixels;
-    private Rect _rect;
 
     // Timing Data
     private float captureFrameTime;
@@ -126,16 +125,7 @@ public class CameraController : MonoBehaviour
         _toFollow = obj;
     }
     
-    void OnEnable()
-    {
-        RenderPipelineManager.beginCameraRendering += EndCameraRendering;
-    }
-    void OnDisable()
-    {
-        RenderPipelineManager.beginCameraRendering -= EndCameraRendering;
-    }
-
-    void Start () 
+    IEnumerator Start () 
     {
         cam = GetComponent<Camera>();
         
@@ -166,10 +156,8 @@ public class CameraController : MonoBehaviour
         _screenWidth = cam.pixelWidth;
         _screenHeight = cam.pixelHeight;
 		
-        _tempRenderTexture = new RenderTexture(_screenWidth, _screenHeight, 0);
         _tempTexture2D = new Texture2D(Screen.width, Screen.height, TextureFormat.RGBA32, false);
         _frameQueue = new Queue<byte[]> ();
-        _newPixels = new Color[_screenWidth * _screenHeight];
         
         frameNumber = 0;
 
@@ -181,6 +169,68 @@ public class CameraController : MonoBehaviour
             threadIsProcessing = false;
             _saverThread.Join();
         }
+        
+        while (true)
+        {
+            yield return new WaitForEndOfFrame();
+            
+            if (_isRecording)
+            {
+                // Check if render target size has changed, if so, terminate
+                if(Screen.width != _screenWidth || Screen.height != _screenHeight)
+                {
+                    FinishRecording();
+                    _screenWidth = Screen.width;
+                    _screenHeight = Screen.height;
+            
+                    // Show error modal view
+                    _errorModalView.Show(true);
+                    _errorModalView.SetMessage("You cannot change screen size during a recording. Terminated recording. (video is saved)");
+                }
+
+                // Calculate number of video frames to produce from this game frame
+                // Generate 'padding' frames if desired framerate is higher than actual framerate
+                float thisFrameTime = Time.time;
+                // _tempTexture2D = ScreenCapture.CaptureScreenshotAsTexture();
+                // Add the required number of copies to the queue
+                for (int i = 0; i < 1; ++i)
+                {
+                    _tempTexture2D = ScreenCapture.CaptureScreenshotAsTexture(1);
+                    var data = _tempTexture2D.GetRawTextureData();
+                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState(_tempTexture2D.format.ToString());
+                    if(data == null) continue;
+                    _frameQueue.Enqueue(data);
+                    frameNumber++;
+                    
+                }
+
+                lastFrameTime = thisFrameTime;
+            }
+        }
+    }
+    
+    
+    private static void FlipTextureVertically(Texture2D original)
+    {
+        // on some platforms texture is flipped by unity
+        
+        var originalPixels = original.GetPixels();
+
+        Color[] newPixels = new Color[originalPixels.Length];
+
+        int width = original.width;
+        int rows = original.height;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < rows; y++)
+            {
+                newPixels[x + y * width] = originalPixels[x + (rows - y -1) * width];
+            }
+        }
+
+        original.SetPixels(newPixels);
+        original.Apply();
     }
 
     void Update() {
@@ -340,86 +390,13 @@ public class CameraController : MonoBehaviour
             transform.transform.LookAt(_selected.transform.position);
         }
         
-        var position = transform.position;
-        position.y *= -1.0f;
-        // GameObject.Find("Reflection Probe").GetComponent<reflectionProbe>().transform.position = position;
-        // GameObject.Find("Reflection Probe").GetComponent<ReflectionProbe>().RenderProbe();
+        // var position = transform.position;
+        // position.y *= 0.0f;
+        // var planarReflection = GameObject.Find("Planar Reflection");
+        // planarReflection.transform.position = position;
+        GameObject.Find("Planar Reflection").GetComponent<PlanarReflectionProbe>().RequestRenderNextUpdate();
     }
     
-    private void EndCameraRendering(ScriptableRenderContext context, Camera camera)
-    {
-        if (_isRecording)
-        {
-            // Check if render target size has changed, if so, terminate
-            if(Screen.width != _screenWidth || Screen.height != _screenHeight)
-            {
-                FinishRecording();
-                _screenWidth = Screen.width;
-                _screenHeight = Screen.height;
-                
-                // Show error modal view
-                _errorModalView.Show(true);
-                _errorModalView.SetMessage("You cannot change screen size during a recording. Terminated recording. (video is saved)");
-            }
-
-            // Calculate number of video frames to produce from this game frame
-            // Generate 'padding' frames if desired framerate is higher than actual framerate
-            float thisFrameTime = Time.time;
-            var rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
-            ScreenCapture.CaptureScreenshotIntoRenderTexture(rt);
-            AsyncGPUReadback.Request(rt, 0, TextureFormat.RGBA32, OnCompleteReadback);
-            RenderTexture.ReleaseTemporary(rt);
-            // Add the required number of copies to the queue
-            //for (int i = 0; i < framesToCapture; ++i)
-            //{
-            //    var data = _tempTexture2D.GetRawTextureData();
-            //    if(data == null) continue;
-            //    
-            //    _frameQueue.Enqueue(data);
-            //    frameNumber++;
-            //}
-
-            lastFrameTime = thisFrameTime;
-        }
-    }
-
-    void OnRenderImage(RenderTexture source, RenderTexture destination)
-    {
-        
-        // Passthrough
-        Graphics.Blit (source, destination);
-    }
-    
-    void OnCompleteReadback(AsyncGPUReadbackRequest request)
-    {
-        _tempTexture2D.SetPixels32(request.GetData<Color32>().ToArray());
-        _tempTexture2D.Apply();
-        // FlipTextureVertically(tex);
-        var data = _tempTexture2D.GetRawTextureData();
-        _frameQueue.Enqueue(data);
-        frameNumber++;
-    }
-    
-    private void FlipTextureVertically(Texture2D original)
-    {
-        // on some platforms texture is flipped by unity
-        var originalPixels = original.GetPixels();
-
-        int width = original.width;
-        int rows = original.height;
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < rows; y++)
-            {
-                _newPixels[x + y * width] = originalPixels[x + (rows - y -1) * width];
-            }
-        }
-
-        original.SetPixels(_newPixels);
-        original.Apply();
-    }
-
     public void TakeScreenShot()
     {
         if (!File.Exists(_dirPath))
@@ -442,9 +419,7 @@ public class CameraController : MonoBehaviour
         _screenWidth = cam.pixelWidth;
         _screenHeight = cam.pixelHeight;
 		
-        _tempRenderTexture = new RenderTexture(_screenWidth, _screenHeight, 0);
         _tempTexture2D = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGBA32, false);
-        _rect = new Rect(0, 0, Screen.width, Screen.height);
 
         // Start recording
         if (threadIsProcessing)
@@ -558,14 +533,12 @@ public class CameraController : MonoBehaviour
             }
             
             ffmpegProc.StartInfo.UseShellExecute = false;
-            ffmpegProc.StartInfo.CreateNoWindow = true;
+            ffmpegProc.StartInfo.CreateNoWindow = false;
             ffmpegProc.StartInfo.RedirectStandardInput = true;
             ffmpegProc.StartInfo.RedirectStandardOutput = true;
             ffmpegProc.StartInfo.RedirectStandardError = true;
             ffmpegProc.StartInfo.Arguments =
-                "-c \"" +
-                "ffmpeg -r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgba -s " + _screenWidth.ToString() + "x" +
-                _screenHeight.ToString() +
+                "-c \"" + "ffmpeg -r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgba -s " + _screenWidth.ToString() + "x" + _screenHeight.ToString() +
                 " -i - -threads 0 -preset fast -y -c:v libx264 " +
                 "-crf 21 " + path + "\"";
         

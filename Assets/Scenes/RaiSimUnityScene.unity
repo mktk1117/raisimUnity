@@ -377,6 +377,7 @@ MonoBehaviour:
   m_Script: {fileID: 481210471}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_Entries: []
 --- !u!4 &68463769
 Transform:
   m_ObjectHideFlags: 19
@@ -6221,7 +6222,7 @@ MonoBehaviour:
       viewerScale: 1
     type: 1
     mode: 1
-    realtimeMode: 0
+    realtimeMode: 2
     lighting:
       multiplier: 1
       weight: 1
@@ -9352,8 +9353,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 648470227}
   m_HandleRect: {fileID: 648470226}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.6711682
+  m_Value: 1.0000004
+  m_Size: 0.7786623
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
