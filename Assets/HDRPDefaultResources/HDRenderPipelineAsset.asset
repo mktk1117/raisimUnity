@@ -157,7 +157,7 @@ MonoBehaviour:
     type: 2}
   m_RenderingPathDefaultCameraFrameSettings:
     bitDatas:
-      data1: 69700742535237
+      data1: 69743692208197
       data2: 4539628425394585600
     lodBias: 1
     lodBiasMode: 0
@@ -168,7 +168,7 @@ MonoBehaviour:
     materialQuality: 0
   m_RenderingPathDefaultBakedOrCustomReflectionFrameSettings:
     bitDatas:
-      data1: 64942043591501
+      data1: 64976403329869
       data2: 4539628424389459968
     lodBias: 1
     lodBiasMode: 0
@@ -179,7 +179,7 @@ MonoBehaviour:
     materialQuality: 0
   m_RenderingPathDefaultRealtimeReflectionFrameSettings:
     bitDatas:
-      data1: 69554681159501
+      data1: 69589040897869
       data2: 4539628424657895424
     lodBias: 1
     lodBiasMode: 0
@@ -227,11 +227,11 @@ MonoBehaviour:
       cubeCookieTexArraySize: 16
       cookieAtlasLastValidMip: 0
       cookieTexArraySize: 1
-      planarReflectionAtlasSize: 1024
+      planarReflectionAtlasSize: 2048
       reflectionProbeCacheSize: 64
       reflectionCubemapSize: 256
       reflectionCacheCompressed: 0
-      planarReflectionCacheCompressed: 0
+      planarReflectionCacheCompressed: 1
       skyReflectionSize: 256
       skyLightingOverrideLayerMask:
         serializedVersion: 2
@@ -242,7 +242,7 @@ MonoBehaviour:
       maxAreaLightsOnScreen: 64
       maxEnvLightsOnScreen: 64
       maxDecalsOnScreen: 512
-      maxPlanarReflectionOnScreen: 16
+      maxPlanarReflectionOnScreen: 32
     hdShadowInitParams:
       maxShadowRequests: 128
       directionalShadowsDepthBits: 32

@@ -128,13 +128,13 @@ public class CameraController : MonoBehaviour
     
     void OnEnable()
     {
-        RenderPipelineManager.endCameraRendering += EndCameraRendering;
+        RenderPipelineManager.beginCameraRendering += EndCameraRendering;
     }
     void OnDisable()
     {
-        RenderPipelineManager.endCameraRendering -= EndCameraRendering;
+        RenderPipelineManager.beginCameraRendering -= EndCameraRendering;
     }
-    
+
     void Start () 
     {
         cam = GetComponent<Camera>();

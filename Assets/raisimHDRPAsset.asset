@@ -227,7 +227,7 @@ MonoBehaviour:
       cubeCookieTexArraySize: 16
       cookieAtlasLastValidMip: 0
       cookieTexArraySize: 1
-      planarReflectionAtlasSize: 1024
+      planarReflectionAtlasSize: 2048
       reflectionProbeCacheSize: 64
       reflectionCubemapSize: 256
       reflectionCacheCompressed: 0
@@ -242,7 +242,7 @@ MonoBehaviour:
       maxAreaLightsOnScreen: 64
       maxEnvLightsOnScreen: 64
       maxDecalsOnScreen: 512
-      maxPlanarReflectionOnScreen: 16
+      maxPlanarReflectionOnScreen: 32
     hdShadowInitParams:
       maxShadowRequests: 128
       directionalShadowsDepthBits: 32
