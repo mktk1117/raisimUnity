@@ -194,9 +194,6 @@ namespace raisimUnity
             // ui controller 
             _errorModalView = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
             _loadingModalView = GameObject.Find("_CanvasModalViewLoading").GetComponent<LoadingViewController>();
-            
-            // set to 60fps
-            Application.targetFrameRate = 60;
             _clientStatus = ClientStatus.Idle;
         }
 

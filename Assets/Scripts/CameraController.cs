@@ -63,7 +63,7 @@ public class CameraController : MonoBehaviour
 
     // Public Properties
     public int maxFrames; // maximum number of frames you want to record in one video
-    public int frameRate = 60; // number of frames to capture per second
+    private int frameRate = 60; // number of frames to capture per second
     public bool videoAvailable = false;
     
     // The Encoder Thread
@@ -71,11 +71,14 @@ public class CameraController : MonoBehaviour
 
     // Texture Readback Objects
     private Texture2D _tempTexture2D;
+    private Texture2D _tempTexture2D24;
+    private RenderTexture _rt;
 
     // Timing Data
     private float captureFrameTime;
     private float lastFrameTime;
     private int frameNumber;
+    private int frameNumberSent = 0;
 
     // Encoder Thread Shared Resources
     private Queue<byte[]> _frameQueue;
@@ -155,8 +158,7 @@ public class CameraController : MonoBehaviour
         // Prepare textures and initial values
         _screenWidth = cam.pixelWidth;
         _screenHeight = cam.pixelHeight;
-		
-        _tempTexture2D = new Texture2D(Screen.width, Screen.height, TextureFormat.RGBA32, false);
+
         _frameQueue = new Queue<byte[]> ();
         
         frameNumber = 0;
@@ -193,22 +195,27 @@ public class CameraController : MonoBehaviour
                 float thisFrameTime = Time.time;
                 // _tempTexture2D = ScreenCapture.CaptureScreenshotAsTexture();
                 // Add the required number of copies to the queue
-                for (int i = 0; i < 1; ++i)
-                {
-                    _tempTexture2D = ScreenCapture.CaptureScreenshotAsTexture(1);
-                    var data = _tempTexture2D.GetRawTextureData();
-                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState(_tempTexture2D.format.ToString());
-                    if(data == null) continue;
-                    _frameQueue.Enqueue(data);
-                    frameNumber++;
-                    
-                }
+
+                _rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
+                ScreenCapture.CaptureScreenshotIntoRenderTexture(_rt);
+                AsyncGPUReadback.Request(_rt, 0, TextureFormat.RGBA32, OnCompleteReadback);
+                GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState((1.0 / Time.smoothDeltaTime).ToString() + "  " + frameNumberSent);
 
                 lastFrameTime = thisFrameTime;
             }
         }
     }
     
+    void OnCompleteReadback(AsyncGPUReadbackRequest request)
+    {
+        _tempTexture2D24.SetPixels32(request.GetData<Color32>().ToArray());
+        _tempTexture2D24.Apply();
+        
+        var data = _tempTexture2D24.GetRawTextureData();
+        if(data == null) return;
+        _frameQueue.Enqueue(data);
+        frameNumber++;
+    }
     
     private static void FlipTextureVertically(Texture2D original)
     {
@@ -420,7 +427,9 @@ public class CameraController : MonoBehaviour
         _screenHeight = cam.pixelHeight;
 		
         _tempTexture2D = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGBA32, false);
-
+        _tempTexture2D24 = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGB24, false);
+        _rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
+        
         // Start recording
         if (threadIsProcessing)
         {
@@ -538,7 +547,7 @@ public class CameraController : MonoBehaviour
             ffmpegProc.StartInfo.RedirectStandardOutput = true;
             ffmpegProc.StartInfo.RedirectStandardError = true;
             ffmpegProc.StartInfo.Arguments =
-                "-c \"" + "ffmpeg -r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgba -s " + _screenWidth.ToString() + "x" + _screenHeight.ToString() +
+                "-c \"" + "ffmpeg -r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgb24 -s " + _screenWidth.ToString() + "x" + _screenHeight.ToString() +
                 " -i - -threads 0 -preset fast -y -c:v libx264 " +
                 "-crf 21 " + path + "\"";
         
@@ -575,7 +584,8 @@ public class CameraController : MonoBehaviour
                 
                     byte[] data = _frameQueue.Dequeue();
                     ffmpegStream.Write(data, 0, data.Length);
-                    ffmpegStream.Flush();    
+                    ffmpegStream.Flush();
+                    frameNumberSent++;
                 }
                 else
                 {

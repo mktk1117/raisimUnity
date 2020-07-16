@@ -235,9 +235,9 @@ Material:
     - _LinkDetailsWithBase: 1
     - _METALNESS: 0
     - _MaterialID: 1
-    - _Metallic: 0.933
+    - _Metallic: 0.743
     - _NormalMapSpace: 0
-    - _NormalScale: 0.13
+    - _NormalScale: 0.23
     - _OPACITY: 1
     - _PPDLodThreshold: 5
     - _PPDMaxSamples: 15
@@ -253,7 +253,7 @@ Material:
     - _SPECULAR_ROUGHNESS: 1
     - _SPECULAR_WEIGHT: 0
     - _SSRefractionProjectionModel: 0
-    - _Smoothness: 0.929
+    - _Smoothness: 1
     - _SmoothnessRemapMax: 1
     - _SmoothnessRemapMin: 0.9755253
     - _SpecularAAScreenSpaceVariance: 0.1

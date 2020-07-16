@@ -84,7 +84,6 @@ namespace raisimUnity
         
         private void Start()
         {
-            Application.targetFrameRate = 60;
             _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
             _camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
             _error = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();

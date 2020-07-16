@@ -331,13 +331,13 @@ MonoBehaviour:
       m_SchemaId:
         m_Id: With3Levels
     lightingQualitySettings:
-      AOStepCount: 040000000600000010000000
-      AOFullRes: 000001
-      AOMaximumRadiusPixels: 200000002800000050000000
+      AOStepCount: 000000000000000000000000
+      AOFullRes: 000000
+      AOMaximumRadiusPixels: 000000000000000000000000
       AOBilateralUpsample: 000101
-      AODirectionCount: 010000000200000004000000
-      ContactShadowSampleCount: 060000000a00000010000000
-      SSRMaxRaySteps: 080000001000000020000000
+      AODirectionCount: 000000000000000000000000
+      ContactShadowSampleCount: 000000000000000000000000
+      SSRMaxRaySteps: 000000000000000000000000
   allowShaderVariantStripping: 1
   enableSRPBatcher: 1
   shaderVariantLogLevel: 0
