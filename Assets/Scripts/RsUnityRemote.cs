@@ -158,9 +158,6 @@ namespace raisimUnity
         
         // objects reinitialize
         private bool _deleteObjects = false;
-        
-        // request information
-        private bool _requestContactInfo = false;
 
         void Start()
         {
@@ -251,6 +248,7 @@ namespace raisimUnity
                                     // Go to InitializeObjectsStart
                                     _clientStatus = ClientStatus.InitializeObjectsStart;
                                 }
+                                processServerRequest();
                             }
                             catch (Exception e)
                             {
@@ -265,7 +263,7 @@ namespace raisimUnity
                         case ClientStatus.InitializeObjectsStart:
                         {
                             try
-                            {
+                            { 
                                 _loadingModalView.Show(true);
                                 _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
                                 _loadingModalView.SetMessage("Loading resources...");
@@ -273,7 +271,7 @@ namespace raisimUnity
 
                                 // Read XML string
                                 ReadXmlString();
-                            
+
                                 // Start initialization
                                 _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
                                 if (_tcpHelper.ReadData() <= 0)
@@ -287,6 +285,7 @@ namespace raisimUnity
                                     _clientStatus = ClientStatus.InitializeObjectsStart;
                                     return;
                                 }
+                                processServerRequest();
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.Initialization)
@@ -332,7 +331,6 @@ namespace raisimUnity
                             {
                                 new RsuException(e, "RsUnityRemote: InitializingObjects");
                             }
-                            
 
                             break;
                         }
@@ -361,6 +359,7 @@ namespace raisimUnity
                                     _clientStatus = ClientStatus.InitializeVisualsStart;
                                     return;
                                 }
+                                processServerRequest();
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.VisualInitialization)
@@ -431,7 +430,7 @@ namespace raisimUnity
                                 
                                 if(_showContactPoints || _showContactForces)
                                     UpdateContacts();
-
+                                
                                 // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
                                 // Else clientStatus is updated to UpdateVisualPosition
                             } catch (Exception e)
@@ -458,6 +457,7 @@ namespace raisimUnity
                                     _clientStatus = ClientStatus.ReinitializeObjectsStart;
                                     return;
                                 }
+                                processServerRequest();
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.Initialization)
@@ -529,7 +529,6 @@ namespace raisimUnity
                         {
                             try
                             {
-                                
                                 // If server side has been changed, initialize visuals
                                 // Clear visuals first
                                 foreach (Transform objT in _visualsRoot.transform)
@@ -550,6 +549,7 @@ namespace raisimUnity
                                     _clientStatus = ClientStatus.ReinitializeVisualsStart;
                                     return;
                                 }
+                                processServerRequest();
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.VisualInitialization)
@@ -616,6 +616,47 @@ namespace raisimUnity
             }
         }
 
+        private void processServerRequest()
+        {
+            ulong requestN = _tcpHelper.GetDataUlong();
+            for (ulong i = 0; i < requestN; i++)
+            {
+                var requestType = _tcpHelper.GetServerRequest();
+                switch (requestType)
+                {
+                    case TcpHelper.ServerRequestType.NoRequest:
+                        break;
+                
+                    case TcpHelper.ServerRequestType.SetCameraTo:
+                        float px = (float)_tcpHelper.GetDataDouble();
+                        float py = (float)_tcpHelper.GetDataDouble();
+                        float pz = (float)_tcpHelper.GetDataDouble();
+                        float lx = (float)_tcpHelper.GetDataDouble();
+                        float ly = (float)_tcpHelper.GetDataDouble();
+                        float lz = (float)_tcpHelper.GetDataDouble();
+                        _camera.transform.LookAt(new Vector3(px, pz, py), new Vector3(lx, lz, ly));
+                        break;
+                
+                    case TcpHelper.ServerRequestType.FocusOnSpecificObject:
+                        var obj = _tcpHelper.GetDataString();
+                        if (obj != "")
+                        { 
+                            _camera.Follow(obj);
+                        }
+                        break;
+                
+                    case TcpHelper.ServerRequestType.StartRecordVideo:
+                        var videoName = _tcpHelper.GetDataString();
+                        _camera.StartRecording(videoName);
+                        break;
+                
+                    case TcpHelper.ServerRequestType.StopRecordVideo:
+                        _camera.FinishRecording();
+                        break;
+                }
+            }
+        }
+        
         private void ClearScene()
         {
             // Objects
@@ -652,7 +693,7 @@ namespace raisimUnity
             // clear object cache
             _objName.Clear();
 
-            _objectController.ClearCache();
+            // _objectController.ClearCache();
             
             _tcpHelper.Flush();
         }
@@ -1162,6 +1203,7 @@ namespace raisimUnity
                 _clientStatus = ClientStatus.UpdateObjectPosition;
                 return;
             }
+            processServerRequest();
 
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType != ServerMessageType.ObjectPositionUpdate)
@@ -1271,6 +1313,7 @@ namespace raisimUnity
                 _clientStatus = ClientStatus.UpdateObjectPosition;
                 return;
             }
+            processServerRequest();
 
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType != ServerMessageType.ContactInfoUpdate)
@@ -1294,6 +1337,7 @@ namespace raisimUnity
                 _clientStatus = ClientStatus.Idle;
                 return;
             }
+            processServerRequest();
 
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             
@@ -1325,11 +1369,19 @@ namespace raisimUnity
             if (_objName.ContainsKey(name))
             {
                 return _objName[name];
-            }
-            else
+            } 
+            
+            if (_objName.ContainsKey(name+"/0"))
             {
-                return "";
+                return _objName[name+"/0"];
             }
+            
+            if (_objName.ContainsKey(name+"/0/0"))
+            {
+                return _objName[name+"/0/0"];
+            }
+
+            return "";
         }
 
         void OnApplicationQuit()

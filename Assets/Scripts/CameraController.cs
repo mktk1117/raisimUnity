@@ -70,9 +70,7 @@ public class CameraController : MonoBehaviour
     private Thread _saverThread;
 
     // Texture Readback Objects
-    private Texture2D _tempTexture2D;
     private Texture2D _tempTexture2D24;
-    private RenderTexture _rt;
 
     // Timing Data
     private float captureFrameTime;
@@ -128,6 +126,8 @@ public class CameraController : MonoBehaviour
         _toFollow = obj;
     }
     
+    
+    
     IEnumerator Start () 
     {
         cam = GetComponent<Camera>();
@@ -153,7 +153,7 @@ public class CameraController : MonoBehaviour
         
         // Set target frame rate (optional)
         Application.targetFrameRate = frameRate;
-        _relativePositionB = new Vector3(1.0f,1.0f,1.0f);
+        _relativePositionB = new Vector3(1.0f,1.0f,-1.0f);
 
         // Prepare textures and initial values
         _screenWidth = cam.pixelWidth;
@@ -196,24 +196,32 @@ public class CameraController : MonoBehaviour
                 // _tempTexture2D = ScreenCapture.CaptureScreenshotAsTexture();
                 // Add the required number of copies to the queue
 
-                _rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
+                var _rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
                 ScreenCapture.CaptureScreenshotIntoRenderTexture(_rt);
                 AsyncGPUReadback.Request(_rt, 0, TextureFormat.RGBA32, OnCompleteReadback);
+                RenderTexture.ReleaseTemporary(_rt);
                 GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState((1.0 / Time.smoothDeltaTime).ToString() + "  " + frameNumberSent);
 
                 lastFrameTime = thisFrameTime;
             }
         }
     }
-    
+
+    private void OnApplicationQuit()
+    {
+        FinishRecording();
+    }
+
     void OnCompleteReadback(AsyncGPUReadbackRequest request)
     {
+        _tempTexture2D24 = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGB24, false);
         _tempTexture2D24.SetPixels32(request.GetData<Color32>().ToArray());
         _tempTexture2D24.Apply();
         
         var data = _tempTexture2D24.GetRawTextureData();
         if(data == null) return;
         _frameQueue.Enqueue(data);
+        Destroy(_tempTexture2D24);
         frameNumber++;
     }
     
@@ -414,7 +422,7 @@ public class CameraController : MonoBehaviour
         ScreenCapture.CaptureScreenshot(filename);
     }
 
-    public void StartRecording()
+    public void StartRecording(string videoName="")
     {
         // Kill thread if it's still alive
         if (_saverThread != null && (threadIsProcessing || _saverThread.IsAlive)) {
@@ -425,11 +433,7 @@ public class CameraController : MonoBehaviour
         // Set recording screend width and height
         _screenWidth = cam.pixelWidth;
         _screenHeight = cam.pixelHeight;
-		
-        _tempTexture2D = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGBA32, false);
-        _tempTexture2D24 = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGB24, false);
-        _rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
-        
+
         // Start recording
         if (threadIsProcessing)
         {
@@ -442,9 +446,14 @@ public class CameraController : MonoBehaviour
             frameNumber = 0;
         
             // Start a new encoder thread
-            _videoName = "Recording-" + DateTime.Now.ToString("yyyy-MM-dd-hh-mm-ss") + ".mp4";
-            lastFrameTime = Time.time - lastFrameTime;
+            if (videoName == "")
+                _videoName = "Recording-" + DateTime.Now.ToString("yyyy-MM-dd-hh-mm-ss") + ".mp4";
+            else
+                _videoName = videoName;
             
+            lastFrameTime = Time.time - lastFrameTime;
+
+            terminateThreadWhenDone = false;
             threadIsProcessing = true;
             _saverThread = new Thread(SaveVideo);
             _saverThread.Start();
@@ -458,6 +467,8 @@ public class CameraController : MonoBehaviour
         
         // Terminate thread after it saves
         terminateThreadWhenDone = true;
+        if(_saverThread != null && _saverThread.IsAlive) _saverThread.Join();
+        _frameQueue.Clear();
     }
 
     private int FFMPEGTest()
