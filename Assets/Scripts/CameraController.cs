@@ -88,6 +88,8 @@ public class CameraController : MonoBehaviour
     // Screenshot related
     private string _dirPath = "";
     private string _videoName = "Recording.mp4";    // updated to Recording-<TIME>.mp4
+    private float recordingStartTime_;
+    private int _moreFrames=1;
     
     // Error modal view
     private const string _ErrorModalViewName = "_CanvasModalViewError";
@@ -198,9 +200,11 @@ public class CameraController : MonoBehaviour
 
                 var _rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
                 ScreenCapture.CaptureScreenshotIntoRenderTexture(_rt);
-                AsyncGPUReadback.Request(_rt, 0, TextureFormat.RGBA32, OnCompleteReadback);
+                AsyncGPUReadback.Request(_rt, 0, TextureFormat.RGB24, OnCompleteReadback);
                 RenderTexture.ReleaseTemporary(_rt);
                 GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState((1.0 / Time.smoothDeltaTime).ToString() + "  " + frameNumberSent);
+                var currentTime = Time.time;
+                _moreFrames = (int)Math.Max((currentTime - recordingStartTime_) * frameRate - frameNumberSent, 1.0);
 
                 lastFrameTime = thisFrameTime;
             }
@@ -214,14 +218,7 @@ public class CameraController : MonoBehaviour
 
     void OnCompleteReadback(AsyncGPUReadbackRequest request)
     {
-        _tempTexture2D24 = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGB24, false);
-        _tempTexture2D24.SetPixels32(request.GetData<Color32>().ToArray());
-        _tempTexture2D24.Apply();
-        
-        var data = _tempTexture2D24.GetRawTextureData();
-        if(data == null) return;
-        _frameQueue.Enqueue(data);
-        Destroy(_tempTexture2D24);
+        _frameQueue.Enqueue(request.GetData<Byte>().ToArray());
         frameNumber++;
     }
     
@@ -429,7 +426,8 @@ public class CameraController : MonoBehaviour
             threadIsProcessing = false;
             _saverThread.Join();
         }
-        
+        _tempTexture2D24 = new Texture2D(_screenWidth, _screenHeight, TextureFormat.RGB24, false);
+
         // Set recording screend width and height
         _screenWidth = cam.pixelWidth;
         _screenHeight = cam.pixelHeight;
@@ -444,6 +442,7 @@ public class CameraController : MonoBehaviour
         {
             _isRecording = true;
             frameNumber = 0;
+            frameNumberSent = 0;
         
             // Start a new encoder thread
             if (videoName == "")
@@ -455,6 +454,7 @@ public class CameraController : MonoBehaviour
 
             terminateThreadWhenDone = false;
             threadIsProcessing = true;
+            recordingStartTime_ = Time.time;
             _saverThread = new Thread(SaveVideo);
             _saverThread.Start();
         }
@@ -534,31 +534,35 @@ public class CameraController : MonoBehaviour
 
         using (var ffmpegProc = new Process())
         {
+            string argumentPrefix = "";
+            
             if (Application.platform == RuntimePlatform.LinuxEditor ||
                 Application.platform == RuntimePlatform.LinuxPlayer)
             {
                 // Linux
                 ffmpegProc.StartInfo.FileName = "/bin/sh";
+                argumentPrefix = "-c \"" + "ffmpeg ";
             }
             else if (Application.platform == RuntimePlatform.OSXEditor || 
                      Application.platform == RuntimePlatform.OSXPlayer)
             {
                 // Mac
-                throw new NotImplementedException();
+                ffmpegProc.StartInfo.FileName = "/bin/sh";
+                argumentPrefix = "-c \"" + "ffmpeg ";
             }
             else
             {
                 // Else...
-                throw new NotImplementedException();
+                ffmpegProc.StartInfo.FileName = "ffmpeg.exe";
             }
             
             ffmpegProc.StartInfo.UseShellExecute = false;
-            ffmpegProc.StartInfo.CreateNoWindow = false;
+            ffmpegProc.StartInfo.CreateNoWindow = true;
             ffmpegProc.StartInfo.RedirectStandardInput = true;
             ffmpegProc.StartInfo.RedirectStandardOutput = true;
             ffmpegProc.StartInfo.RedirectStandardError = true;
             ffmpegProc.StartInfo.Arguments =
-                "-c \"" + "ffmpeg -r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgb24 -s " + _screenWidth.ToString() + "x" + _screenHeight.ToString() +
+                argumentPrefix + "-r " + frameRate.ToString() + " -f rawvideo -pix_fmt rgb24 -s " + _screenWidth.ToString() + "x" + _screenHeight.ToString() +
                 " -i - -threads 0 -preset fast -y -c:v libx264 " +
                 "-crf 21 " + path + "\"";
         
@@ -594,9 +598,13 @@ public class CameraController : MonoBehaviour
                     var ffmpegStream = ffmpegProc.StandardInput.BaseStream;
                 
                     byte[] data = _frameQueue.Dequeue();
-                    ffmpegStream.Write(data, 0, data.Length);
-                    ffmpegStream.Flush();
-                    frameNumberSent++;
+                    
+                    for (int i = 0; i < _moreFrames; i++)
+                    {
+                        ffmpegStream.Write(data, 0, data.Length);
+                        ffmpegStream.Flush();
+                        frameNumberSent++;    
+                    }
                 }
                 else
                 {
@@ -621,7 +629,10 @@ public class CameraController : MonoBehaviour
                     // TODO error
                 }
             }
+            
+            ffmpegProc.Dispose();
         }
+        
         
         terminateThreadWhenDone = false;
         threadIsProcessing = false;
