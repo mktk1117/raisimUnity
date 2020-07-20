@@ -127,9 +127,7 @@ public class CameraController : MonoBehaviour
     {
         _toFollow = obj;
     }
-    
-    
-    
+
     IEnumerator Start () 
     {
         cam = GetComponent<Camera>();
@@ -401,12 +399,23 @@ public class CameraController : MonoBehaviour
             transform.position = currentPos;
             transform.transform.LookAt(_selected.transform.position);
         }
-        
-        // var position = transform.position;
-        // position.y *= 0.0f;
-        // var planarReflection = GameObject.Find("Planar Reflection");
-        // planarReflection.transform.position = position;
-        GameObject.Find("Planar Reflection").GetComponent<PlanarReflectionProbe>().RequestRenderNextUpdate();
+        var halfspace = GameObject.Find("halfspace_viz");
+        if (halfspace != null)
+        {
+            GameObject.Find("Planar Reflection").GetComponent<PlanarReflectionProbe>().enabled = true;
+            var position = transform.position;
+            position.y = halfspace.transform.position.y + 0.001f;
+            var planarReflection = GameObject.Find("Planar Reflection");
+
+            GameObject.Find("Planar Reflection").GetComponent<PlanarReflectionProbe>().RequestRenderNextUpdate();
+            float increment = 16.6666666f;
+            halfspace.transform.position = new Vector3( Convert.ToInt32(position.x/increment)*increment, halfspace.transform.position.y, Convert.ToInt32(position.z/increment)*increment);
+            planarReflection.transform.position = halfspace.transform.position;
+        }
+        else
+        {
+            GameObject.Find("Planar Reflection").GetComponent<PlanarReflectionProbe>().enabled = false;
+        }
     }
     
     public void TakeScreenShot()

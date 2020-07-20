@@ -243,12 +243,13 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                processServerRequest();
+
                                 if (state == ServerStatus.StatusRendering)
                                 {
                                     // Go to InitializeObjectsStart
                                     _clientStatus = ClientStatus.InitializeObjectsStart;
                                 }
-                                processServerRequest();
                             }
                             catch (Exception e)
                             {
@@ -278,6 +279,8 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                processServerRequest();
+
                                 if (state == ServerStatus.StatusTerminating)
                                     new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
@@ -285,7 +288,6 @@ namespace raisimUnity
                                     _clientStatus = ClientStatus.InitializeObjectsStart;
                                     return;
                                 }
-                                processServerRequest();
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.Initialization)
@@ -352,6 +354,8 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                processServerRequest();
+
                                 if (state == ServerStatus.StatusTerminating)
                                     new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
@@ -359,7 +363,6 @@ namespace raisimUnity
                                     _clientStatus = ClientStatus.InitializeVisualsStart;
                                     return;
                                 }
-                                processServerRequest();
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.VisualInitialization)
@@ -450,6 +453,8 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                processServerRequest();
+
                                 if (state == ServerStatus.StatusTerminating)
                                     new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
@@ -457,7 +462,6 @@ namespace raisimUnity
                                     _clientStatus = ClientStatus.ReinitializeObjectsStart;
                                     return;
                                 }
-                                processServerRequest();
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.Initialization)
@@ -542,6 +546,8 @@ namespace raisimUnity
                                     new RsuException("RsUnityRemote: Cannot read data from TCP");
 
                                 ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                processServerRequest();
+
                                 if (state == ServerStatus.StatusTerminating)
                                     new RsuException("RsUnityRemote: Server is terminating");
                                 else if (state == ServerStatus.StatusHibernating)
@@ -549,7 +555,6 @@ namespace raisimUnity
                                     _clientStatus = ClientStatus.ReinitializeVisualsStart;
                                     return;
                                 }
-                                processServerRequest();
 
                                 ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
                                 if (messageType != ServerMessageType.VisualInitialization)
@@ -1194,6 +1199,8 @@ namespace raisimUnity
                 new RsuException("Cannot read data from TCP");
 
             ServerStatus state = _tcpHelper.GetDataServerStatus();
+            processServerRequest();
+
             if (state == ServerStatus.StatusTerminating)
             {
                 return;
@@ -1203,7 +1210,6 @@ namespace raisimUnity
                 _clientStatus = ClientStatus.UpdateObjectPosition;
                 return;
             }
-            processServerRequest();
 
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType != ServerMessageType.ObjectPositionUpdate)

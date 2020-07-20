@@ -155,7 +155,7 @@ namespace raisimUnity
             plane.transform.SetParent(root.transform, true);
             plane.name = "halfSpace";
             plane.transform.localPosition = new Vector3(0, height, 0);
-            plane.transform.localScale = new Vector3(4, 1, 4);
+            plane.transform.localScale = new Vector3(15, 1, 15);
             GameObject.DestroyImmediate(plane.GetComponent<Collider>());
             return plane;
         }
