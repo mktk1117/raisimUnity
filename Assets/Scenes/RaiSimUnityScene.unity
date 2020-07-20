@@ -1929,7 +1929,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 666273144}
   m_HandleRect: {fileID: 666273143}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -4421,7 +4421,6 @@ MonoBehaviour:
   _selected: {fileID: 0}
   selectedNumber_: 0
   maxFrames: 150
-  frameRate: 30
   videoAvailable: 0
 --- !u!114 &963194230
 MonoBehaviour:
@@ -6243,7 +6242,7 @@ MonoBehaviour:
       m_ObsoleteSphereBaseOffset: {x: 0, y: 0, z: 0}
       m_ObsoleteOffset: {x: 0, y: 0, z: 0}
       m_Shape: 0
-      m_BoxSize: {x: 30, y: 0.01, z: 30}
+      m_BoxSize: {x: 150, y: 0.01, z: 150}
       m_BoxBlendDistancePositive: {x: 0, y: 0, z: 0}
       m_BoxBlendDistanceNegative: {x: 0, y: 0, z: 0}
       m_BoxBlendNormalDistancePositive: {x: 0, y: 0, z: 0}
@@ -9354,7 +9353,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 648470226}
   m_Direction: 2
   m_Value: 1.0000004
-  m_Size: 0.7786623
+  m_Size: 0.76014334
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
