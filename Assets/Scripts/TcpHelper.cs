@@ -80,14 +80,11 @@ namespace raisimUnity
 
         public void EstablishConnection(int waitTime = 1000)
         {
-            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState("TcpHelper/EstablishConnection");
-
             try
             {
              // create tcp client and stream
                 if (_client == null || !_client.Connected)
                 {
-                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState("TcpHelper/EstablishConnection: creating a new connection");
                     _client = new TcpClient(_tcpAddress, _tcpPort);
                     _client.Client.NoDelay = true;
                     _stream = _client.GetStream();

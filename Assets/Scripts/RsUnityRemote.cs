@@ -1223,10 +1223,8 @@ namespace raisimUnity
                 // this means the object was added or deleted from server size
                 _clientStatus = ClientStatus.ReinitializeObjectsStart;
                 return;
-            }
-            
+            }       
 
-            
             ulong numObjects = _tcpHelper.GetDataUlong();
 
             for (ulong i = 0; i < numObjects; i++)
@@ -1326,6 +1324,52 @@ namespace raisimUnity
             {
                 new RsuException("The server sends a wrong message");
             }
+
+            ulong numContacts = _tcpHelper.GetDataUlong();
+
+            // clear contacts 
+            ClearContacts();
+
+            // create contact marker
+            List<Tuple<Vector3, Vector3>> contactList = new List<Tuple<Vector3, Vector3>>();
+            float forceMaxNorm = 0;
+
+            for (ulong i = 0; i < numContacts; i++)
+            {
+                double posX = _tcpHelper.GetDataDouble();
+                double posY = _tcpHelper.GetDataDouble();
+                double posZ = _tcpHelper.GetDataDouble();
+
+                double forceX = _tcpHelper.GetDataDouble();
+                double forceY = _tcpHelper.GetDataDouble();
+                double forceZ = _tcpHelper.GetDataDouble();
+                var force = new Vector3((float) forceX, (float) forceY, (float) forceZ);
+                
+                contactList.Add(new Tuple<Vector3, Vector3>(
+                    new Vector3((float) posX, (float) posY, (float) posZ), force
+                ));
+                
+                forceMaxNorm = Math.Max(forceMaxNorm, force.magnitude);
+            }
+            
+            for (ulong i = 0; i < numContacts; i++)
+            {
+                var contact = contactList[(int) i];
+
+                if (contact.Item2.magnitude > 0)
+                {
+                    if(_showContactPoints)
+                        _objectController.CreateContactMarker(
+                            _contactPointsRoot, (int)i, contact.Item1, _contactPointMarkerScale);
+
+                    if (_showContactForces)
+                    {
+                        _objectController.CreateContactForceMarker(
+                            _contactForcesRoot, (int) i, contact.Item1, contact.Item2 / forceMaxNorm,
+                            _contactForceMarkerScale);
+                    }
+                }
+            }
         }
         
         private void ReadXmlString()
@@ -1411,13 +1455,11 @@ namespace raisimUnity
                     renderer.enabled = _showVisualBody;
                     Color temp = renderer.material.color;
                     if (_showContactForces || _showContactPoints || _showBodyFrames)
-                    {
-                        renderer.material.shader = _transparentShader;
+                    {                        
                         renderer.material.color = new Color(temp.r, temp.g, temp.b, 0.8f);
                     }
                     else
                     {
-                        renderer.material.shader = _standardShader;
                         renderer.material.color = new Color(temp.r, temp.g, temp.b, 1.0f);
                     }
                 }
@@ -1435,13 +1477,11 @@ namespace raisimUnity
                     if (_showContactForces || _showContactPoints || _showBodyFrames)
                     {
                         Material mat = ren.material;
-                        mat.shader = _transparentShader;
                         mat.color = new Color(temp.r, temp.g, temp.b, 0.5f);
                     }
                     else
                     {
                         Material mat = ren.material;
-                        mat.shader = _standardShader;
                         mat.color = new Color(temp.r, temp.g, temp.b, 1.0f);
                     }
                 }

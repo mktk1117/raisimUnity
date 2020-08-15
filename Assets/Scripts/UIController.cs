@@ -249,6 +249,13 @@ namespace raisimUnity
             }
         }
 
+        private void TryConnect()
+        {
+            isAutoConnecting = true;
+            _remote.EstablishConnection();
+            isAutoConnecting = false;
+        }
+
         private void RefereshScrollResources()
         {
             var scrollRect = GameObject.Find(_ScrollViewResourceDirs).GetComponent<ScrollRect>();
@@ -373,9 +380,9 @@ namespace raisimUnity
                     {
                         try
                         {
-                            isAutoConnecting = true;
-                            _remote.EstablishConnection(100);
-                            isAutoConnecting = false;
+                            _autoConnectThread = new Thread(new ThreadStart(TryConnect));
+                            _autoConnectThread.Start();
+                            //_remote.EstablishConnection();
                         }
                         catch (Exception e)
                         {
