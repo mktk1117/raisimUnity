@@ -8,6 +8,7 @@ TagManager:
   - collision
   - contact
   - frame
+  - both
   layers:
   - Default
   - TransparentFX

@@ -33,7 +33,7 @@ namespace raisimUnity
 {
     public class TcpHelper
     {
-        private const int MaxBufferSize = 4194304;
+        private const int MaxBufferSize = 33554432;
         private const int MaxPacketSize = 1024;
         private const int FooterSize = sizeof(Byte);
 
@@ -190,7 +190,6 @@ namespace raisimUnity
             
             int numBytes = 0;
             Byte footer = Convert.ToByte('c');
-            int[] readHistory = new int[500];
             int readCounter = 0;
             int valread; 
 
@@ -204,7 +203,6 @@ namespace raisimUnity
                     int recieved = _stream.Read(_buffer, numBytes, MaxPacketSize - valread);
                     valread += recieved;
                     numBytes += recieved;
-                    readHistory[readCounter] = recieved;
                     readCounter++;
                 }
                 

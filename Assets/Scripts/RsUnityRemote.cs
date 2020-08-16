@@ -88,6 +88,7 @@ namespace raisimUnity
         public const string Visual = "visual";
         public const string Collision = "collision";
         public const string Frame = "frame";
+        public const string Both = "both";
     }
 
     public class RsUnityRemote : MonoBehaviour
@@ -141,7 +142,7 @@ namespace raisimUnity
         
         // Default materials
         private Material _planeMaterial;
-        private Material _terrainMaterial;
+        private Material _whiteMaterial;
         private Material _defaultMaterialR;
         private Material _defaultMaterialG;
         private Material _defaultMaterialB;
@@ -183,7 +184,7 @@ namespace raisimUnity
 
             // materials
             _planeMaterial = Resources.Load<Material>("Tiles1");
-            _terrainMaterial = Resources.Load<Material>("white");
+            _whiteMaterial = Resources.Load<Material>("white");
             _defaultMaterialR = Resources.Load<Material>("Plastic1");
             _defaultMaterialG = Resources.Load<Material>("Plastic2");
             _defaultMaterialB = Resources.Load<Material>("Plastic3");
@@ -802,6 +803,8 @@ namespace raisimUnity
                                     {
                                         if (visParam.Count != 3) new RsuException("Box Mesh error");
                                         var box = _objectController.CreateBox(objFrame, (float) visParam[0], (float) visParam[1], (float) visParam[2]);
+                                        box.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        box.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                         box.tag = tag;
                                     }
                                         break;
@@ -809,6 +812,8 @@ namespace raisimUnity
                                     {
                                         if (visParam.Count != 2) new RsuException("Capsule Mesh error");
                                         var capsule = _objectController.CreateCapsule(objFrame, (float)visParam[0], (float)visParam[1]);
+                                        capsule.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        capsule.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                         capsule.tag = tag;
                                     }
                                         break;
@@ -821,6 +826,8 @@ namespace raisimUnity
                                     {
                                         if (visParam.Count != 2) new RsuException("Cylinder Mesh error");
                                         var cylinder = _objectController.CreateCylinder(objFrame, (float)visParam[0], (float)visParam[1]);
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                         cylinder.tag = tag;
                                     }
                                         break;
@@ -828,6 +835,8 @@ namespace raisimUnity
                                     {
                                         if (visParam.Count != 1) new RsuException("Sphere Mesh error");
                                         var sphere = _objectController.CreateSphere(objFrame, (float)visParam[0]);
+                                        sphere.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        sphere.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                         sphere.tag = tag;
                                     }
                                         break;
@@ -858,6 +867,7 @@ namespace raisimUnity
                     float height = _tcpHelper.GetDataFloat();
                     var objFrame = _objectController.CreateRootObject(_objectsRoot, objectIndex.ToString());
                     var plane = _objectController.CreateHalfSpace(objFrame, height);
+                    plane.GetComponentInChildren<Renderer>().material = _whiteMaterial;
                     plane.tag = VisualTag.Collision;
 
                     // default visual object
@@ -875,18 +885,6 @@ namespace raisimUnity
                     if (name != "" && !_objName.ContainsKey(name))
                     {
                         _objName.Add(name, objectIndex.ToString());    
-                    }
-                    
-                    // get material
-                    Material material;
-                    if (appearances != null && !string.IsNullOrEmpty(appearances.As<Appearances>().materialName))
-                    {
-                        material = Resources.Load<Material>(appearances.As<Appearances>().materialName);
-                    }
-                    else
-                    {
-                        // default material
-                        material = _terrainMaterial;
                     }
                     
                     // center
@@ -912,17 +910,10 @@ namespace raisimUnity
                     }
 
                     var objFrame = _objectController.CreateRootObject(_objectsRoot, objectIndex.ToString());
-                    var terrain = _objectController.CreateTerrain(objFrame, numSampleX, sizeX, centerX, numSampleY, sizeY, centerY, heights, false);
-                    terrain.tag = VisualTag.Collision;
-                    
-                    // default visual object
-                    if (appearances == null || !appearances.As<Appearances>().subAppearances.Any())
-                    {
-                        var terrainVis = _objectController.CreateTerrain(objFrame, numSampleX, sizeX, centerX, numSampleY, sizeY, centerY, heights);
-                        terrainVis.GetComponentInChildren<Renderer>().material = material;
-                        terrainVis.GetComponentInChildren<Renderer>().material.mainTextureScale = new Vector2(sizeX, sizeY);
-                        terrainVis.tag = VisualTag.Visual;
-                    }
+                    var terrain = _objectController.CreateTerrain(objFrame, numSampleX, sizeX, centerX, numSampleY, sizeY, centerY, heights, true);
+                    terrain.tag = VisualTag.Both;
+                    terrain.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                    terrain.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                 }
                 else
                 {
@@ -1014,6 +1005,8 @@ namespace raisimUnity
                         }
                             break;
                     }
+                    collisionObject.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                    collisionObject.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                     
                     // visual body
                     GameObject visualObject = null;
@@ -1453,15 +1446,15 @@ namespace raisimUnity
                 foreach (var renderer in obj.GetComponentsInChildren<Renderer>())
                 {
                     renderer.enabled = _showVisualBody;
-                    Color temp = renderer.material.color;
-                    if (_showContactForces || _showContactPoints || _showBodyFrames)
-                    {                        
-                        renderer.material.color = new Color(temp.r, temp.g, temp.b, 0.8f);
-                    }
-                    else
-                    {
-                        renderer.material.color = new Color(temp.r, temp.g, temp.b, 1.0f);
-                    }
+                    // Color temp = renderer.material.color;
+                    // if (_showContactForces || _showContactPoints || _showBodyFrames)
+                    // {                        
+                    //     renderer.material.color = new Color(temp.r, temp.g, temp.b, 0.8f);
+                    // }
+                    // else
+                    // {
+                    //     renderer.material.color = new Color(temp.r, temp.g, temp.b, 1.0f);
+                    // }
                 }
             }
 
@@ -1473,17 +1466,17 @@ namespace raisimUnity
                 foreach (var ren in obj.GetComponentsInChildren<Renderer>())
                 {
                     ren.enabled = _showCollisionBody;
-                    Color temp = ren.material.color;
-                    if (_showContactForces || _showContactPoints || _showBodyFrames)
-                    {
-                        Material mat = ren.material;
-                        mat.color = new Color(temp.r, temp.g, temp.b, 0.5f);
-                    }
-                    else
-                    {
-                        Material mat = ren.material;
-                        mat.color = new Color(temp.r, temp.g, temp.b, 1.0f);
-                    }
+                    // Color temp = ren.material.color;
+                    // if (_showContactForces || _showContactPoints || _showBodyFrames)
+                    // {
+                    //     Material mat = ren.material;
+                    //     mat.color = new Color(temp.r, temp.g, temp.b, 0.5f);
+                    // }
+                    // else
+                    // {
+                    //     Material mat = ren.material;
+                    //     mat.color = new Color(temp.r, temp.g, temp.b, 1.0f);
+                    // }
                 }
             }
 

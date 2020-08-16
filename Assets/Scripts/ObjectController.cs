@@ -302,23 +302,11 @@ namespace raisimUnity
             if (!recomputeNormal) mesh.normals = normals.ToArray();
             else mesh.RecalculateNormals();
 
-            // this is just temporal object (will be deleted immediately!)
-            var temp = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            temp.SetActive(false);
-
             var terrain = new GameObject("terrain");
             terrain.transform.SetParent(root.transform, true);
             terrain.AddComponent<MeshFilter>();
             terrain.AddComponent<MeshRenderer>();
-
             terrain.GetComponent<MeshFilter>().mesh = mesh;
-            terrain.GetComponent<MeshRenderer>().material =  temp.GetComponent<MeshRenderer>().sharedMaterial;
-
-            // Do not allow to select terrain 
-//            terrain.AddComponent<MeshCollider>();
-
-            // destroy temp 
-            GameObject.DestroyImmediate(temp);
 
             return terrain;
         }
@@ -366,7 +354,7 @@ namespace raisimUnity
                 loadedMesh.name = meshFile;
                 loadedMesh.transform.SetParent(_objectCache.transform, false);
                 loadedMesh.SetActive(false);
-                //loadedMesh.GetComponent<Renderer>().material.shader = Shader.Find("HDRP/Lit");
+                loadedMesh.GetComponentInChildren<Renderer>().material.shader = Shader.Find("HDRP/Lit");
                 _meshCache.Add(meshFile, new Tuple<GameObject, MeshUpAxis>(loadedMesh, meshUpAxis));
             }
 
