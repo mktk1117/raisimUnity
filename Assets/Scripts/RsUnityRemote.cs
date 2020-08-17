@@ -728,6 +728,10 @@ namespace raisimUnity
                 
                 // get name and find corresponding appearance from XML
                 string name = _tcpHelper.GetDataString();
+                if (name != "" && !_objName.ContainsKey(name))
+                {
+                    _objName.Add(name, objectIndex.ToString() + "/0/0");    
+                }
                 
                 Appearances? appearances = _xmlReader.FindApperancesFromObjectName(name);
                 
@@ -737,11 +741,6 @@ namespace raisimUnity
 
                     // visItem = 0 (visuals)
                     // visItem = 1 (collisions)
-                    if (name != "" && !_objName.ContainsKey(name))
-                    {
-                        _objName.Add(name, objectIndex.ToString() + "/0/0");    
-                    }
-
                     for (int visItem = 0; visItem < 2; visItem++)
                     {
                         ulong numberOfVisObjects = _tcpHelper.GetDataUlong();
@@ -847,11 +846,6 @@ namespace raisimUnity
                 }
                 else if (objectType == RsObejctType.RsHalfSpaceObject)
                 {
-                    if (name != "" && !_objName.ContainsKey(name))
-                    {
-                        _objName.Add(name, objectIndex.ToString());    
-                    }
-
                     // get material
                     Material material;
                     if (appearances != null && !string.IsNullOrEmpty(appearances.As<Appearances>().materialName))
@@ -882,11 +876,6 @@ namespace raisimUnity
                 }
                 else if (objectType == RsObejctType.RsHeightMapObject)
                 {
-                    if (name != "" && !_objName.ContainsKey(name))
-                    {
-                        _objName.Add(name, objectIndex.ToString());    
-                    }
-                    
                     // center
                     float centerX = _tcpHelper.GetDataFloat();
                     float centerY = _tcpHelper.GetDataFloat();
@@ -915,13 +904,100 @@ namespace raisimUnity
                     terrain.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
                     terrain.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                 }
-                else
+                else if (objectType == RsObejctType.RsCompoundObject)
                 {
-                    if (name != "" && !_objName.ContainsKey(name))
+                    // default material
+                    Material material;
+                    switch (_numInitializedObjects % 3)
                     {
-                        _objName.Add(name, objectIndex.ToString());    
+                        case 0:
+                            material = _defaultMaterialR;
+                            break;
+                        case 1:
+                            material = _defaultMaterialG;
+                            break;
+                        case 2:
+                            material = _defaultMaterialB;
+                            break;
+                        default:
+                            material = _defaultMaterialR;
+                            break;
                     }
                     
+                    for (int visItem = 0; visItem < 2; visItem++)
+                    {
+                        if (visItem == 1)
+                            material = _whiteMaterial;
+                        
+                        ulong numberOfVisObjects = _tcpHelper.GetDataUlong();
+
+                        for (ulong j = 0; j < numberOfVisObjects; j++)
+                        {
+                            RsObejctType obType = _tcpHelper.GetDataRsObejctType();
+                            string subName = objectIndex.ToString() + "/" + visItem.ToString() + "/" + j.ToString();
+                            var objFrame = _objectController.CreateRootObject(_objectsRoot, subName);
+
+                            string tag = "";
+                            if (visItem == 0)
+                                tag = VisualTag.Visual;
+                            else if (visItem == 1)
+                                tag = VisualTag.Collision;
+                            
+                            switch (obType)
+                            {
+                                case RsObejctType.RsBoxObject:
+                                {
+                                    double x = _tcpHelper.GetDataDouble();
+                                    double y = _tcpHelper.GetDataDouble();
+                                    double z = _tcpHelper.GetDataDouble();
+                                    var box = _objectController.CreateBox(objFrame, (float) x, (float) y, (float) z);
+                                    box.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                    box.GetComponentInChildren<MeshRenderer>().material = material;
+                                    box.tag = tag;
+                                }
+                                    break;
+                                case RsObejctType.RsCapsuleObject:
+                                {
+                                    double radius = _tcpHelper.GetDataDouble();
+                                    double height = _tcpHelper.GetDataDouble();
+
+                                    var capsule = _objectController.CreateCapsule(objFrame, (float)radius, (float)height);
+                                    capsule.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                    capsule.GetComponentInChildren<MeshRenderer>().material = material;
+                                    capsule.tag = tag;
+                                }
+                                    break;
+                                case RsObejctType.RsConeObject:
+                                {
+                                    // TODO URDF does not support cone shape
+                                }
+                                    break;
+                                case RsObejctType.RsCylinderObject:
+                                {
+                                    double radius = _tcpHelper.GetDataDouble();
+                                    double height = _tcpHelper.GetDataDouble();
+                                    var cylinder = _objectController.CreateCylinder(objFrame, (float)radius, (float)height);
+                                    cylinder.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                    cylinder.GetComponentInChildren<MeshRenderer>().material = material;
+                                    cylinder.tag = tag;
+                                }
+                                    break;
+                                case RsObejctType.RsSphereObject:
+                                {
+                                    double radius = _tcpHelper.GetDataDouble();
+                                    var sphere = _objectController.CreateSphere(objFrame, (float)radius);
+                                    sphere.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                    sphere.GetComponentInChildren<MeshRenderer>().material = material;
+                                    sphere.tag = tag;
+                                }
+                                    break;
+                                
+                            }
+                        }
+                    }
+                }
+                else
+                {
                     // single body object
                     
                     // create base frame of object
