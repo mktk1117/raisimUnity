@@ -22,7 +22,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Tiles1
   m_Shader: {fileID: 4800000, guid: 6e4ae4064600d784cac1e41a9e6f2e59, type: 3}
-  m_ShaderKeywords: _BENTNORMALMAP _MATERIAL_FEATURE_CLEAR_COAT _NORMALMAP _NORMALMAP_TANGENT_SPACE
+  m_ShaderKeywords: _DISABLE_DECALS _DISABLE_SSR _MATERIAL_FEATURE_CLEAR_COAT _NORMALMAP_TANGENT_SPACE
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -47,11 +47,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseColorMap:
-        m_Texture: {fileID: 2800000, guid: e214be3fefccc1e9d8e00ab9cd872afe, type: 3}
-        m_Scale: {x: 6, y: 6}
+        m_Texture: {fileID: 2800000, guid: c3f6866e61f7e4b4290e7350b8a27ded, type: 3}
+        m_Scale: {x: 200, y: 200}
         m_Offset: {x: 0, y: 0}
     - _BentNormalMap:
-        m_Texture: {fileID: 2800000, guid: 35c060b607fd927f0bd8e10fa6156c8e, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BentNormalMapOS:
@@ -99,7 +99,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: e214be3fefccc1e9d8e00ab9cd872afe, type: 3}
+        m_Texture: {fileID: 2800000, guid: c3f6866e61f7e4b4290e7350b8a27ded, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MaskMap:
@@ -111,7 +111,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: c56f76afe2d1a5c4994b2929bdad61ea, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMapOS:
@@ -181,7 +181,7 @@ Material:
     - _COAT_ROUGHNESS: 0
     - _COAT_THICKNESS: 5
     - _COAT_WEIGHT: 0
-    - _CoatMask: 0.78
+    - _CoatMask: 0.89
     - _CullMode: 2
     - _CullModeForward: 2
     - _Cutoff: 0.5
@@ -228,23 +228,23 @@ Material:
     - _HeightPoMAmplitude: 2
     - _HeightTessAmplitude: 2
     - _HeightTessCenter: 0.5
-    - _InvTilingScale: 0.16666667
+    - _InvTilingScale: 0.005
     - _Ior: 1.5
     - _IridescenceMask: 1
     - _IridescenceThickness: 1
     - _LinkDetailsWithBase: 1
     - _METALNESS: 0
     - _MaterialID: 1
-    - _Metallic: 0.743
+    - _Metallic: 0.916
     - _NormalMapSpace: 0
-    - _NormalScale: 0.23
+    - _NormalScale: 6.73
     - _OPACITY: 1
     - _PPDLodThreshold: 5
     - _PPDMaxSamples: 15
     - _PPDMinSamples: 5
     - _PPDPrimitiveLength: 1
     - _PPDPrimitiveWidth: 1
-    - _ReceivesSSR: 1
+    - _ReceivesSSR: 0
     - _RefractionModel: 0
     - _RequireSplitLighting: 0
     - _SPECULAR_ANISOTROPY: 0
@@ -253,7 +253,7 @@ Material:
     - _SPECULAR_ROUGHNESS: 1
     - _SPECULAR_WEIGHT: 0
     - _SSRefractionProjectionModel: 0
-    - _Smoothness: 1
+    - _Smoothness: 0.796
     - _SmoothnessRemapMax: 1
     - _SmoothnessRemapMin: 0.9755253
     - _SpecularAAScreenSpaceVariance: 0.1
@@ -261,17 +261,17 @@ Material:
     - _SpecularOcclusionMode: 1
     - _SrcBlend: 1
     - _StencilRef: 0
-    - _StencilRefDepth: 8
+    - _StencilRefDepth: 0
     - _StencilRefDistortionVec: 4
-    - _StencilRefGBuffer: 10
-    - _StencilRefMV: 40
+    - _StencilRefGBuffer: 2
+    - _StencilRefMV: 32
     - _StencilWriteMask: 6
     - _StencilWriteMaskDepth: 8
     - _StencilWriteMaskDistortionVec: 4
     - _StencilWriteMaskGBuffer: 14
     - _StencilWriteMaskMV: 40
     - _SubsurfaceMask: 1
-    - _SupportDecals: 1
+    - _SupportDecals: 0
     - _SurfaceType: 0
     - _TexWorldScale: 1
     - _TexWorldScaleEmissive: 1
