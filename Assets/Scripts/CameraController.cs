@@ -595,7 +595,7 @@ public class CameraController : MonoBehaviour
                 int result = ffmpegProc.ExitCode;
                 if (result == 127)
                 {
-                    // TODO error ffmpeg is not exist
+                    new RsuException("ffmpeg command not found. Something is wrong with the installation");
                 }
             }
 
@@ -612,7 +612,7 @@ public class CameraController : MonoBehaviour
                     {
                         ffmpegStream.Write(data, 0, data.Length);
                         ffmpegStream.Flush();
-                        frameNumberSent++;    
+                        frameNumberSent++;
                     }
                 }
                 else
