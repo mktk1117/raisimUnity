@@ -1229,7 +1229,7 @@ namespace raisimUnity
                 if (string.IsNullOrEmpty(materialName) && visual != null)
                 {
                     // set material by rgb 
-                    visual.GetComponentInChildren<Renderer>().material.color = new Color(colorR, colorG, colorB, colorA);
+                    visual.GetComponentInChildren<Renderer>().material.SetColor("_BaseColor", new Color(colorR, colorG, colorB, colorA));
                     if(glow)
                     {
                         visual.GetComponentInChildren<Renderer>().material.EnableKeyword("_EMISSION");
