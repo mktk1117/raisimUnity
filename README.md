@@ -16,6 +16,8 @@ The following Unity packages are imported by Unity Package Manager automatically
 
 - minizip ```sudo apt install minizip```
 
+- vulkan. check https://linuxconfig.org/install-and-test-vulkan-on-linux
+
 The followings are optional dependencies
 - [ffmpeg](https://www.ffmpeg.org/) for video recording
     - You can install ffmpeg by 
