@@ -294,10 +294,6 @@ namespace raisimUnity
             {
                 _camera.Follow(_lookAtOptions[dropdown.value]);
             }
-            else
-            {
-                _camera._selected = null;
-            }
         }
 
         public void ConstructLookAt()
@@ -334,12 +330,6 @@ namespace raisimUnity
                     _style.fontSize = 34;
                 else
                     _style.fontSize = Mathf.RoundToInt(14 + (Screen.dpi - 100.0f) * 0.1f);
-            }
-
-            if (_camera._selected == null)
-            {
-                var LookAtDropdown = GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>();
-                LookAtDropdown.value = 0;
             }
             
             GUILayout.Label(_state, _style);

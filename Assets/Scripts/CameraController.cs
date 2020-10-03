@@ -47,9 +47,11 @@ public class CameraController : MonoBehaviour
     private Vector3 _anchorPoint;
     private Quaternion _anchorRot;
     private Vector3 _relativePositionB;
+    private Vector3 _cursorPosition;
+    private int _cursorStaticCount = 0;
 
     // object selection
-    public GameObject _selected; 
+    private GameObject _selected; 
 
     // video recording
     private bool _isRecording = false;
@@ -247,10 +249,6 @@ public class CameraController : MonoBehaviour
         if (!string.IsNullOrEmpty(_toFollow))
         {
             _selected = GameObject.Find(_remote.GetSubName(_toFollow));
-            if (_selected != null)
-            {
-                _toFollow = "";
-            }
         }
         
         // move by keyboard
@@ -292,42 +290,64 @@ public class CameraController : MonoBehaviour
                     break;
             }
         }
+        var view = cam.ScreenToViewportPoint(Input.mousePosition);
+        if (view == _cursorPosition)
+        {
+            _cursorStaticCount++;
+        }
+        else
+        {
+            _cursorStaticCount = 0;
+        }
         
+        _cursorPosition = view;
         
+        if (_cursorStaticCount > 80)
+        {
+            _sidebar.GetComponent<Canvas>().enabled = false;
+            _helpUI.GetComponent<Canvas>().enabled = false;
+        }
+        else
+        {
+            _visibleUI = 0;
+            UIController prevUi = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
+            prevUi.gameObject.GetComponent<Canvas>().enabled = true;
+        }
+
         if (!EventSystem.current.IsPointerOverGameObject ()) 
         {
             // Only do this if mouse pointer is not on the GUI
             
-            // Select object by left click
-            if (Input.GetMouseButtonDown(0))
-            {
-                Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-                RaycastHit hit;
-                if (Physics.Raycast(ray, out hit))
-                {
-                    if (_selected != null)
-                    {
-                        // Change shader back for previously selected object
-                        foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
-                        {
-                            ren.material.shader = Shader.Find(_defaultShader);
-                        }
-                    }
-                
-                    // Set selected object
-                    _selected = hit.transform.parent.gameObject;
-                    
-                    // Focus camera on selected object + save relative position of object w.r.t camera
-                    transform.rotation = Quaternion.LookRotation(_selected.transform.position - transform.position);
-                    _relativePositionB = Quaternion.Inverse(transform.rotation) * (_selected.transform.position - transform.position);
-
-                    // Change shader for selected object
-                    foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
-                    {
-                        ren.material.shader = Shader.Find(_defaultShader);
-                    }
-                }
-            }
+            // // Select object by left click
+            // if (Input.GetMouseButtonDown(0))
+            // {
+            //     Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            //     RaycastHit hit;
+            //     if (Physics.Raycast(ray, out hit))
+            //     {
+            //         if (_selected != null)
+            //         {
+            //             // Change shader back for previously selected object
+            //             foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
+            //             {
+            //                 ren.material.shader = Shader.Find(_defaultShader);
+            //             }
+            //         }
+            //     
+            //         // Set selected object
+            //         _selected = hit.transform.parent.gameObject;
+            //         
+            //         // Focus camera on selected object + save relative position of object w.r.t camera
+            //         transform.rotation = Quaternion.LookRotation(_selected.transform.position - transform.position);
+            //         _relativePositionB = Quaternion.Inverse(transform.rotation) * (_selected.transform.position - transform.position);
+            //
+            //         // Change shader for selected object
+            //         foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
+            //         {
+            //             ren.material.shader = Shader.Find(_defaultShader);
+            //         }
+            //     }
+            // }
 
             // Change camera orientation by right drag 
             if (Input.GetMouseButtonDown(1))
@@ -345,6 +365,7 @@ public class CameraController : MonoBehaviour
                 }
             
                 _selected = null;
+                _toFollow = "";
             }
             
             if (Input.GetMouseButton(1))
@@ -427,7 +448,7 @@ public class CameraController : MonoBehaviour
             "Screenshot-" + DateTime.Now.ToString("yyyy-MM-dd-hh-mm-ss") + ".png");
         ScreenCapture.CaptureScreenshot(filename);
     }
-
+    
     public void StartRecording(string videoName="")
     {
         // Kill thread if it's still alive
@@ -608,7 +629,7 @@ public class CameraController : MonoBehaviour
                 
                     byte[] data = _frameQueue.Dequeue();
                     
-                    for (int i = 0; i < _moreFrames; i++)
+                    for (int i = 0; i < Math.Min(_moreFrames,2); i++)
                     {
                         ffmpegStream.Write(data, 0, data.Length);
                         ffmpegStream.Flush();
