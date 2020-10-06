@@ -4277,7 +4277,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2127537128}
   m_HandleRect: {fileID: 2127537127}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -4418,7 +4418,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8d788a2895d4d30b1937afcd01e3144, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _selected: {fileID: 0}
   selectedNumber_: 0
   maxFrames: 150
   videoAvailable: 0
@@ -9353,7 +9352,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 648470226}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.58929384
+  m_Size: 0.70390177
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

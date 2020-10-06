@@ -135,6 +135,7 @@ namespace raisimUnity
         private ulong _numWorldObjects; 
         private ulong _numInitializedVisuals;
         private ulong _numWorldVisuals;
+        private ulong _wireN=0;
         
         // Shaders
         private Shader _transparentShader;
@@ -143,6 +144,7 @@ namespace raisimUnity
         // Default materials
         private Material _planeMaterial;
         private Material _whiteMaterial;
+        private Material _wireMaterial;
         private Material _defaultMaterialR;
         private Material _defaultMaterialG;
         private Material _defaultMaterialB;
@@ -185,6 +187,7 @@ namespace raisimUnity
             // materials
             _planeMaterial = Resources.Load<Material>("Tiles1");
             _whiteMaterial = Resources.Load<Material>("white");
+            _wireMaterial = Resources.Load<Material>("wire");
             _defaultMaterialR = Resources.Load<Material>("Plastic1");
             _defaultMaterialG = Resources.Load<Material>("Plastic2");
             _defaultMaterialB = Resources.Load<Material>("Plastic3");
@@ -321,6 +324,16 @@ namespace raisimUnity
                                 }
                                 else if (_numInitializedObjects == _numWorldObjects)
                                 {
+                                    _wireN = _tcpHelper.GetDataUlong();
+                                    for (ulong i = 0; i < _wireN; i++)
+                                    {
+                                        var objFrame = _objectController.CreateRootObject(_objectsRoot, "wire"+i);
+                                        var cylinder = _objectController.CreateCylinder(objFrame, 1, 1);
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material = _wireMaterial;
+                                        cylinder.tag = VisualTag.Both;    
+                                    }
+
                                     // Initialization done 
                                     _loadingModalView.Show(false);
                                     _clientStatus = ClientStatus.InitializeVisualsStart;
@@ -506,7 +519,17 @@ namespace raisimUnity
                                 {
                                     // Reinitialization done 
                                     _clientStatus = ClientStatus.ReinitializeVisualsStart;
-                                
+                                    
+                                    _wireN = _tcpHelper.GetDataUlong();
+                                    for (ulong i = 0; i < _wireN; i++)
+                                    {
+                                        var objFrame = _objectController.CreateRootObject(_objectsRoot, "wire"+i);
+                                        var cylinder = _objectController.CreateCylinder(objFrame, 1, 1);
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material = _wireMaterial;
+                                        cylinder.tag = VisualTag.Both;    
+                                    }
+
                                     // Disable other cameras than main camera
                                     foreach (var cam in Camera.allCameras)
                                     {
@@ -1360,6 +1383,32 @@ namespace raisimUnity
                 {
                     new RsuException("Cannot find unity game object: " + visualName);
                 }
+            }
+            
+            // constraints
+            _wireN = _tcpHelper.GetDataUlong();
+            for (ulong i = 0; i < _wireN; i++)
+            {
+                double posX1 = _tcpHelper.GetDataDouble();
+                double posY1 = _tcpHelper.GetDataDouble();
+                double posZ1 = _tcpHelper.GetDataDouble();
+                
+                double posX2 = _tcpHelper.GetDataDouble();
+                double posY2 = _tcpHelper.GetDataDouble();
+                double posZ2 = _tcpHelper.GetDataDouble();
+                
+                GameObject localObject = GameObject.Find("wire"+i);
+                
+                Quaternion q = new Quaternion(); 
+                q.SetLookRotation(new Vector3((float)(posX1-posX2), (float)(posY1-posY2), (float)(posZ1-posZ2)), new Vector3(1,0,0));
+                
+                ObjectController.SetTransform(localObject,
+                    new Vector3((float)(posX1+posX2)/2.0f, (float)(posY1+posY2)/2.0f, (float)(posZ1+posZ2)/2.0f),
+                    q);
+
+                double length = Math.Sqrt((posX1 - posX2) * (posX1 - posX2) + (posY1 - posY2) * (posY1 - posY2) +
+                                          (posZ1 - posZ2) * (posZ1 - posZ2));
+                localObject.transform.localScale = new Vector3((float)0.01, (float)length, (float)0.01);
             }
             
             // Update object position done.
