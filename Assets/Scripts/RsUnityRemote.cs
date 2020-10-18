@@ -29,6 +29,7 @@ using System.Linq;
 using System.Xml;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
@@ -157,7 +158,7 @@ namespace raisimUnity
         private ulong _objectConfiguration = 0; 
         private ulong _visualConfiguration = 0;
         private CameraController _camera = null;
-        private string _defaultShader = "HDRP/Lit";
+        private string _defaultShader;
         
         // objects reinitialize
         private bool _deleteObjects = false;
@@ -176,6 +177,15 @@ namespace raisimUnity
             _contactForcesRoot = new GameObject("_ContactForces");
             _contactForcesRoot.transform.SetParent(transform);
             _camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
+            
+            if (GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
+            {
+                _defaultShader = "HDRP/Lit";
+            }
+            else
+            {
+                _defaultShader = "Standard";
+            }
             
             // object controller 
             _objectController = new ObjectController(_objectCache);
@@ -329,7 +339,7 @@ namespace raisimUnity
                                     {
                                         var objFrame = _objectController.CreateRootObject(_objectsRoot, "wire"+i);
                                         var cylinder = _objectController.CreateCylinder(objFrame, 1, 1);
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                         cylinder.GetComponentInChildren<MeshRenderer>().material = _wireMaterial;
                                         cylinder.tag = VisualTag.Both;    
                                     }
@@ -525,7 +535,7 @@ namespace raisimUnity
                                     {
                                         var objFrame = _objectController.CreateRootObject(_objectsRoot, "wire"+i);
                                         var cylinder = _objectController.CreateCylinder(objFrame, 1, 1);
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                         cylinder.GetComponentInChildren<MeshRenderer>().material = _wireMaterial;
                                         cylinder.tag = VisualTag.Both;    
                                     }
@@ -825,7 +835,7 @@ namespace raisimUnity
                                     {
                                         if (visParam.Count != 3) new RsuException("Box Mesh error");
                                         var box = _objectController.CreateBox(objFrame, (float) visParam[0], (float) visParam[1], (float) visParam[2]);
-                                        box.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        box.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                         box.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                         box.tag = tag;
                                     }
@@ -834,7 +844,7 @@ namespace raisimUnity
                                     {
                                         if (visParam.Count != 2) new RsuException("Capsule Mesh error");
                                         var capsule = _objectController.CreateCapsule(objFrame, (float)visParam[0], (float)visParam[1]);
-                                        capsule.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        capsule.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                         capsule.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                         capsule.tag = tag;
                                     }
@@ -848,7 +858,7 @@ namespace raisimUnity
                                     {
                                         if (visParam.Count != 2) new RsuException("Cylinder Mesh error");
                                         var cylinder = _objectController.CreateCylinder(objFrame, (float)visParam[0], (float)visParam[1]);
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                         cylinder.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                         cylinder.tag = tag;
                                     }
@@ -857,7 +867,7 @@ namespace raisimUnity
                                     {
                                         if (visParam.Count != 1) new RsuException("Sphere Mesh error");
                                         var sphere = _objectController.CreateSphere(objFrame, (float)visParam[0]);
-                                        sphere.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                        sphere.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                         sphere.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                         sphere.tag = tag;
                                     }
@@ -924,7 +934,7 @@ namespace raisimUnity
                     var objFrame = _objectController.CreateRootObject(_objectsRoot, objectIndex.ToString());
                     var terrain = _objectController.CreateTerrain(objFrame, numSampleX, sizeX, centerX, numSampleY, sizeY, centerY, heights, true);
                     terrain.tag = VisualTag.Both;
-                    terrain.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                    terrain.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                     terrain.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                 }
                 else if (objectType == RsObejctType.RsCompoundObject)
@@ -974,7 +984,7 @@ namespace raisimUnity
                                     double y = _tcpHelper.GetDataDouble();
                                     double z = _tcpHelper.GetDataDouble();
                                     var box = _objectController.CreateBox(objFrame, (float) x, (float) y, (float) z);
-                                    box.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                    box.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                     box.GetComponentInChildren<MeshRenderer>().material = material;
                                     box.tag = tag;
                                 }
@@ -985,7 +995,7 @@ namespace raisimUnity
                                     double height = _tcpHelper.GetDataDouble();
 
                                     var capsule = _objectController.CreateCapsule(objFrame, (float)radius, (float)height);
-                                    capsule.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                    capsule.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                     capsule.GetComponentInChildren<MeshRenderer>().material = material;
                                     capsule.tag = tag;
                                 }
@@ -1000,7 +1010,7 @@ namespace raisimUnity
                                     double radius = _tcpHelper.GetDataDouble();
                                     double height = _tcpHelper.GetDataDouble();
                                     var cylinder = _objectController.CreateCylinder(objFrame, (float)radius, (float)height);
-                                    cylinder.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                    cylinder.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                     cylinder.GetComponentInChildren<MeshRenderer>().material = material;
                                     cylinder.tag = tag;
                                 }
@@ -1009,7 +1019,7 @@ namespace raisimUnity
                                 {
                                     double radius = _tcpHelper.GetDataDouble();
                                     var sphere = _objectController.CreateSphere(objFrame, (float)radius);
-                                    sphere.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                                    sphere.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                                     sphere.GetComponentInChildren<MeshRenderer>().material = material;
                                     sphere.tag = tag;
                                 }
@@ -1104,7 +1114,7 @@ namespace raisimUnity
                         }
                             break;
                     }
-                    collisionObject.GetComponentInChildren<MeshRenderer>().material.shader = Shader.Find("HDRP/Lit");
+                    collisionObject.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
                     collisionObject.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                     
                     // visual body

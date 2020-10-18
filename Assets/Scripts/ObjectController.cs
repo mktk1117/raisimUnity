@@ -28,6 +28,7 @@ using System.IO;
 using System.Xml;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.Timeline;
 using UnityMeshImporter;
 using Quaternion = UnityEngine.Quaternion;
@@ -49,13 +50,24 @@ namespace raisimUnity
         private Dictionary<string, Tuple<GameObject, MeshUpAxis>> _meshCache;
 
         private GameObject _arrowMesh;
-        
+        private Shader _standardShader;
+
         public ObjectController(GameObject cache)
         {
             _objectCache = cache;
             _arrowMesh = Resources.Load("others/arrow") as GameObject;
 
             _meshCache = new Dictionary<string, Tuple<GameObject, MeshUpAxis>>();
+
+            if (GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
+            {
+                _standardShader = Shader.Find("HDRP/Lit");
+            }
+            else
+            {
+                _standardShader = Shader.Find("Standard");
+            }
+
         }
 
         public void ClearCache()
@@ -111,7 +123,7 @@ namespace raisimUnity
             var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.transform.SetParent(root.transform, true);
             sphere.transform.localScale = new Vector3(radius*2.0f, radius*2.0f, radius*2.0f);
-            sphere.GetComponentInChildren<Renderer>().material.shader = Shader.Find("HDRP/Lit");
+            sphere.GetComponentInChildren<Renderer>().material.shader = _standardShader;
             return sphere;
         }
 
@@ -120,7 +132,7 @@ namespace raisimUnity
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
             box.transform.SetParent(root.transform, true);
             box.transform.localScale = new Vector3(sx, sz, sy);
-            box.GetComponentInChildren<Renderer>().material.shader = Shader.Find("HDRP/Lit");
+            box.GetComponentInChildren<Renderer>().material.shader = _standardShader;
             return box;
         }
 
@@ -129,7 +141,7 @@ namespace raisimUnity
             var cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             cylinder.transform.SetParent(root.transform, true);
             cylinder.transform.localScale = new Vector3(radius*2f, height*0.5f, radius*2f);
-            cylinder.GetComponentInChildren<Renderer>().material.shader = Shader.Find("HDRP/Lit");
+            cylinder.GetComponentInChildren<Renderer>().material.shader = _standardShader;
             return cylinder;
         }
 
@@ -141,7 +153,7 @@ namespace raisimUnity
             var capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             capsule.transform.SetParent(root.transform, true);
             capsule.transform.localScale = new Vector3(radius*2f, height*0.5f+radius, radius*2f);
-            capsule.GetComponentInChildren<Renderer>().material.shader = Shader.Find("HDRP/Lit");
+            capsule.GetComponentInChildren<Renderer>().material.shader = _standardShader;
             return capsule;
         }
         
@@ -150,7 +162,7 @@ namespace raisimUnity
             var arrow = GameObject.Instantiate(_arrowMesh);
             arrow.transform.SetParent(root.transform, true);
             arrow.transform.localScale = new Vector3(radius, radius, height);
-            arrow.GetComponentInChildren<Renderer>().material.shader = Shader.Find("HDRP/Lit");
+            arrow.GetComponentInChildren<Renderer>().material.shader = _standardShader;
             return arrow;
         }
 
@@ -359,7 +371,7 @@ namespace raisimUnity
                 loadedMesh.name = meshFile;
                 loadedMesh.transform.SetParent(_objectCache.transform, false);
                 loadedMesh.SetActive(false);
-                loadedMesh.GetComponentInChildren<Renderer>().material.shader = Shader.Find("HDRP/Lit");
+                loadedMesh.GetComponentInChildren<Renderer>().material.shader = _standardShader;
                 _meshCache.Add(meshFile, new Tuple<GameObject, MeshUpAxis>(loadedMesh, meshUpAxis));
             }
 

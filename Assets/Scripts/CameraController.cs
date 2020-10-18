@@ -101,19 +101,16 @@ public class CameraController : MonoBehaviour
 
     private Vector3 targetPos;
     private Vector3 currentPos;
-    
+
     // UI
     private int _visibleUI = 0;
-    
+    private Shader _standardShader;
+
     // object to follow
     private string _toFollow="";
     
     // easy access
     private RsUnityRemote _remote;
-    
-    // default shader
-    private string _defaultShader = "HDRP/Lit";
-    
     public bool ThreadIsProcessing
     {
         get => threadIsProcessing;
@@ -133,6 +130,14 @@ public class CameraController : MonoBehaviour
     IEnumerator Start () 
     {
         cam = GetComponent<Camera>();
+        if (GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
+        {
+            _standardShader = Shader.Find("HDRP/Lit");
+        }
+        else
+        {
+            _standardShader = Shader.Find("Standard");
+        }
         
         // Error modal view
         _errorModalView = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
@@ -360,7 +365,7 @@ public class CameraController : MonoBehaviour
                 {
                     foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
                     {
-                        ren.material.shader = Shader.Find(_defaultShader);
+                        ren.material.shader = _standardShader;
                     }
                 }
             
