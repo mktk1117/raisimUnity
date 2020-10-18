@@ -1368,6 +1368,17 @@ namespace raisimUnity
                 double quatX = _tcpHelper.GetDataDouble();
                 double quatY = _tcpHelper.GetDataDouble();
                 double quatZ = _tcpHelper.GetDataDouble();
+                
+                RsVisualType objectType = _tcpHelper.GetDataRsVisualType();
+
+                double colorR = _tcpHelper.GetDataDouble();
+                double colorG = _tcpHelper.GetDataDouble();
+                double colorB = _tcpHelper.GetDataDouble();
+                double colorA = _tcpHelper.GetDataDouble();
+                
+                double sizeA = _tcpHelper.GetDataDouble();
+                double sizeB = _tcpHelper.GetDataDouble();
+                double sizeC = _tcpHelper.GetDataDouble();
 
                 GameObject localObject = GameObject.Find(visualName);
 
@@ -1378,6 +1389,38 @@ namespace raisimUnity
                         new Vector3((float)posX, (float)posY, (float)posZ), 
                         new Quaternion((float)quatX, (float)quatY, (float)quatZ, (float)quatW)
                     );
+                    
+                    // set material by rgb 
+                    localObject.transform.GetChild(1).gameObject.GetComponentInChildren<Renderer>().material.SetColor("_BaseColor", new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
+                    
+                    switch (objectType)
+                    {
+                        case RsVisualType.RsVisualSphere :
+                        {
+                            localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeA, (float)sizeA);
+                        }
+                            break;
+                        case RsVisualType.RsVisualBox:
+                        {
+                            localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeB, (float)sizeC);
+                        }
+                            break;
+                        case RsVisualType.RsVisualCylinder:
+                        {
+                            localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeB, (float)sizeA);
+                        }
+                            break;
+                        case RsVisualType.RsVisualCapsule:
+                        {
+                            localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeB*0.5f+(float)sizeA*0.5f, (float)sizeA);
+                        }
+                            break;
+                        case RsVisualType.RsVisualArrow:
+                        {
+                            localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeA, (float)sizeB);
+                        }
+                            break;
+                    }
                 }
                 else
                 {
