@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
@@ -122,11 +123,13 @@ namespace raisimUnity
         private float _contactPointMarkerScale = 1;
         private float _contactForceMarkerScale = 1;
         private float _bodyFrameMarkerScale = 1;
-        
+        private GameObject _arrowMesh;
+
         // Root objects
         private GameObject _objectsRoot;
         private GameObject _visualsRoot;
         private GameObject _contactPointsRoot;
+        private GameObject _polylineRoot;
         private GameObject _contactForcesRoot;
         private GameObject _objectCache;
         
@@ -159,9 +162,17 @@ namespace raisimUnity
         private ulong _visualConfiguration = 0;
         private CameraController _camera = null;
         private string _defaultShader;
+        private string _colorString;
         
         // objects reinitialize
         private bool _deleteObjects = false;
+        
+        // visualization arrows
+        private ulong _nCreatedArrowsForContactForce = 0;
+        private ulong _nCreatedArrowsForContactPoints = 0;
+        private ulong _nCreatedArrowsForExternalForce = 0;
+        private ulong _nCreatedArrowsForExternalTorque = 0;
+        private ulong _nCreatedPolyLineBox = 0;
 
         void Start()
         {
@@ -174,17 +185,22 @@ namespace raisimUnity
             _visualsRoot.transform.SetParent(transform);
             _contactPointsRoot = new GameObject("_ContactPoints");
             _contactPointsRoot.transform.SetParent(transform);
+            _polylineRoot = new GameObject("_polylineRoot");
+            _polylineRoot.transform.SetParent(transform);
             _contactForcesRoot = new GameObject("_ContactForces");
             _contactForcesRoot.transform.SetParent(transform);
             _camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
-            
+            _arrowMesh = Resources.Load("others/arrow") as GameObject;
+
             if (GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
             {
                 _defaultShader = "HDRP/Lit";
+                _colorString = "_BaseColor";
             }
             else
             {
                 _defaultShader = "Standard";
+                _colorString = "_Color";
             }
             
             // object controller 
@@ -458,6 +474,24 @@ namespace raisimUnity
                                 if(_showContactPoints || _showContactForces)
                                     UpdateContacts();
                                 
+                                if (!_showContactForces)
+                                {
+                                    for (ulong i = 0; i < _nCreatedArrowsForContactForce; i++)
+                                    {
+                                        var forceMaker = _contactForcesRoot.transform.Find("contactForce" + i.ToString()).gameObject;
+                                        forceMaker.SetActive(false);
+                                    }
+                                }
+            
+                                if (!_showContactPoints)
+                                {
+                                    for (ulong i = 0; i < _nCreatedArrowsForContactForce; i++)
+                                    {
+                                        var forceMaker = _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject;
+                                        forceMaker.SetActive(false);
+                                    }
+                                }
+                                
                                 // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
                                 // Else clientStatus is updated to UpdateVisualPosition
                             } catch (Exception e)
@@ -710,6 +744,12 @@ namespace raisimUnity
                 Destroy(objT.gameObject);
             }
             
+            // polylines
+            foreach (Transform objT in _polylineRoot.transform)
+            {
+                Destroy(objT.gameObject);
+            }
+            
             // contact forces
             foreach (Transform child in _contactForcesRoot.transform)
             {
@@ -721,6 +761,11 @@ namespace raisimUnity
             {
                 Destroy(child.gameObject);
             }
+
+            _nCreatedArrowsForContactForce = 0;
+            _nCreatedArrowsForContactPoints = 0;
+            _nCreatedArrowsForExternalForce = 0;
+            _nCreatedArrowsForExternalTorque = 0;
             
             // clear appearances
             if(_xmlReader != null)
@@ -736,22 +781,7 @@ namespace raisimUnity
             
             _tcpHelper.Flush();
         }
-
-        private void ClearContacts()
-        {
-            // contact points
-            foreach (Transform objT in _contactPointsRoot.transform)
-            {
-                Destroy(objT.gameObject);
-            }
-            
-            // contact forces
-            foreach (Transform child in _contactForcesRoot.transform)
-            {
-                Destroy(child.gameObject);
-            }
-        }
-
+        
         private void PartiallyInitializeObjects()
         {
             while (_numInitializedObjects < _numWorldObjects)
@@ -1262,7 +1292,7 @@ namespace raisimUnity
                 if (string.IsNullOrEmpty(materialName) && visual != null)
                 {
                     // set material by rgb 
-                    visual.GetComponentInChildren<Renderer>().material.SetColor("_BaseColor", new Color(colorR, colorG, colorB, colorA));
+                    visual.GetComponentInChildren<Renderer>().material.SetColor(_colorString, new Color(colorR, colorG, colorB, colorA));
                     if(glow)
                     {
                         visual.GetComponentInChildren<Renderer>().material.EnableKeyword("_EMISSION");
@@ -1401,7 +1431,7 @@ namespace raisimUnity
                     );
                     
                     // set material by rgb 
-                    localObject.transform.GetChild(1).gameObject.GetComponentInChildren<Renderer>().material.SetColor("_BaseColor", new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
+                    localObject.transform.GetChild(1).gameObject.GetComponentInChildren<Renderer>().material.SetColor(_colorString, new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
                     
                     switch (objectType)
                     {
@@ -1438,6 +1468,70 @@ namespace raisimUnity
                 }
             }
             
+            // polylines objects
+            numObjects = _tcpHelper.GetDataUlong();
+            List<List<Vector3>> lineList = new List<List<Vector3>>();
+            List<Color> colorList = new List<Color>();
+            ulong polyLineSegN = 0;
+
+            for (ulong i = 0; i < numObjects; i++)
+            {
+                string visualName = _tcpHelper.GetDataString();
+                double colorR = _tcpHelper.GetDataDouble();
+                double colorG = _tcpHelper.GetDataDouble();
+                double colorB = _tcpHelper.GetDataDouble();
+                double colorA = _tcpHelper.GetDataDouble();
+                colorList.Add(new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
+                
+                var npoints = _tcpHelper.GetDataUlong();
+                polyLineSegN += npoints - 1;
+                lineList.Add(new List<Vector3>());
+                for (ulong j = 0; j < npoints; j++)
+                    lineList.Last().Add(new Vector3((float)_tcpHelper.GetDataDouble(), (float)_tcpHelper.GetDataDouble(), (float)_tcpHelper.GetDataDouble()));
+            }
+            
+            for (ulong markerID = _nCreatedPolyLineBox; markerID < polyLineSegN; markerID++)
+            {
+                var segment = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                segment.name = "polylines" + markerID.ToString();
+                segment.tag = VisualTag.Both;
+                segment.transform.SetParent(_polylineRoot.transform, true);
+                segment.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+                _nCreatedPolyLineBox = markerID+1;
+            }
+
+            ulong boxyId = 0;
+            for (ulong i = 0; i < numObjects; i++)
+            {
+                var line = lineList[(int) i];
+                for (int j = 0; j < line.Count-1; j++)
+                {
+                    var box = _polylineRoot.transform.Find("polylines" + boxyId.ToString()).gameObject;
+                    var pos1 = line[j];
+                    var pos2 = line[j + 1];
+                    boxyId++;
+                    
+                    Quaternion q = new Quaternion(); 
+                    q.SetLookRotation(new Vector3((float)(pos1[0]-pos2[0]), (float)(pos1[1]-pos2[1]), (float)(pos1[2]-pos2[2])), new Vector3(1,0,0));
+                
+                    ObjectController.SetTransform(box,
+                        new Vector3((float)(pos1[0]+pos2[0])/2.0f, (float)(pos1[1]+pos2[1])/2.0f, (float)(pos1[2]+pos2[2])/2.0f),
+                        q);
+
+                    double length = Math.Sqrt((pos1[0] - pos2[0]) * (pos1[0] - pos2[0]) + (pos1[1] - pos2[1]) * (pos1[1] - pos2[1]) +
+                                              (pos1[2] - pos2[2]) * (pos1[2] - pos2[2]));
+                    box.GetComponent<Renderer>().material.SetColor(_colorString, colorList[(int)i]);
+                    
+                    box.transform.localScale = new Vector3((float)0.005, (float)length, (float)0.005);
+                }
+            }
+            
+            for (ulong i = polyLineSegN; i < _nCreatedPolyLineBox; i++)
+            {
+                var forceMaker = _contactForcesRoot.transform.Find("polylines" + i.ToString()).gameObject;
+                forceMaker.SetActive(false);
+            }
+
             // constraints
             _wireN = _tcpHelper.GetDataUlong();
             for (ulong i = 0; i < _wireN; i++)
@@ -1461,9 +1555,119 @@ namespace raisimUnity
 
                 double length = Math.Sqrt((posX1 - posX2) * (posX1 - posX2) + (posY1 - posY2) * (posY1 - posY2) +
                                           (posZ1 - posZ2) * (posZ1 - posZ2));
-                localObject.transform.localScale = new Vector3((float)0.01, (float)length, (float)0.01);
+                localObject.transform.localScale = new Vector3((float)0.005, (float)length, (float)0.005);
             }
             
+            // external force
+            ulong ExternalForceN = _tcpHelper.GetDataUlong();
+
+            // create contact marker
+            List<Tuple<Vector3, Vector3>> externalForceList = new List<Tuple<Vector3, Vector3>>();
+            float forceMaxNorm = 0;
+            
+            for (ulong markerID = _nCreatedArrowsForExternalForce; markerID < ExternalForceN; markerID++)
+            {
+                var forceMaker = GameObject.Instantiate(_arrowMesh);
+
+                forceMaker.name = "externalForce" + markerID.ToString();
+                forceMaker.tag = VisualTag.Both;
+                forceMaker.transform.SetParent(_contactForcesRoot.transform, true);
+                
+                _objectController.SetContactForceMarker(
+                    forceMaker, new Vector3(0,0,0), new Vector3(1,1,1), Color.green,
+                    _contactForceMarkerScale);
+
+                _nCreatedArrowsForExternalForce = markerID+1;
+            }
+
+            for (ulong i = 0; i < ExternalForceN; i++)
+            {
+                double posX = _tcpHelper.GetDataDouble();
+                double posY = _tcpHelper.GetDataDouble();
+                double posZ = _tcpHelper.GetDataDouble();
+
+                double forceX = _tcpHelper.GetDataDouble();
+                double forceY = _tcpHelper.GetDataDouble();
+                double forceZ = _tcpHelper.GetDataDouble();
+                var force = new Vector3((float) forceX, (float) forceY, (float) forceZ);
+                
+                externalForceList.Add(new Tuple<Vector3, Vector3>(
+                    new Vector3((float) posX, (float) posY, (float) posZ), force
+                ));
+                
+                forceMaxNorm = Math.Max(forceMaxNorm, force.magnitude);
+            }
+
+            for (ulong i = ExternalForceN; i < _nCreatedArrowsForExternalForce; i++)
+            {
+                var forceMaker = _contactForcesRoot.transform.Find("externalForce" + i.ToString()).gameObject;
+                forceMaker.SetActive(false);
+            }
+
+            for (ulong i = 0; i < ExternalForceN; i++)
+            {
+                var forceMaker = _contactForcesRoot.transform.Find("externalForce" + i.ToString()).gameObject;
+                var contact = externalForceList[(int) i];
+                _objectController.SetContactForceMarker(
+                    forceMaker, contact.Item1, contact.Item2 / forceMaxNorm, Color.green,
+                    _contactForceMarkerScale);
+                forceMaker.SetActive(true);
+            }
+
+            forceMaxNorm = 0;
+            // external torque
+            var ExternalTorqueN = _tcpHelper.GetDataUlong();
+            List<Tuple<Vector3, Vector3>> externalTorqueList = new List<Tuple<Vector3, Vector3>>();
+            
+            for (ulong markerID = _nCreatedArrowsForExternalTorque; markerID < ExternalTorqueN; markerID++)
+            {
+                var forceMaker = GameObject.Instantiate(_arrowMesh);
+
+                forceMaker.name = "externalTorque" + markerID.ToString();
+                forceMaker.tag = VisualTag.Both;
+                forceMaker.transform.SetParent(_contactForcesRoot.transform, true);
+                
+                _objectController.SetContactForceMarker(
+                    forceMaker, new Vector3(0,0,0), new Vector3(1,1,1), Color.yellow,
+                    _contactForceMarkerScale);
+
+                _nCreatedArrowsForExternalTorque = markerID+1;
+            }
+            
+            for (ulong i = ExternalTorqueN; i < _nCreatedArrowsForExternalTorque; i++)
+            {
+                var forceMaker = _contactForcesRoot.transform.Find("externalTorque" + i.ToString()).gameObject;
+                forceMaker.SetActive(false);
+            }
+
+            for (ulong i = 0; i < ExternalTorqueN; i++)
+            {
+                double posX = _tcpHelper.GetDataDouble();
+                double posY = _tcpHelper.GetDataDouble();
+                double posZ = _tcpHelper.GetDataDouble();
+
+                double forceX = _tcpHelper.GetDataDouble();
+                double forceY = _tcpHelper.GetDataDouble();
+                double forceZ = _tcpHelper.GetDataDouble();
+                var force = new Vector3((float) forceX, (float) forceY, (float) forceZ);
+                
+                externalTorqueList.Add(new Tuple<Vector3, Vector3>(
+                    new Vector3((float) posX, (float) posY, (float) posZ), force
+                ));
+                
+                forceMaxNorm = Math.Max(forceMaxNorm, force.magnitude);
+            }
+            
+            for (ulong i = 0; i < ExternalTorqueN; i++)
+            {
+                var forceMaker = _contactForcesRoot.transform.Find("externalTorque" + i.ToString()).gameObject;
+                var contact = externalTorqueList[(int) i];
+                _objectController.SetContactForceMarker(
+                    forceMaker, contact.Item1, contact.Item2 / forceMaxNorm, Color.yellow,
+                    _contactForceMarkerScale);
+                forceMaker.SetActive(true);
+            }
+
             // Update object position done.
             // Go to visual object position update
             _clientStatus = ClientStatus.UpdateObjectPosition;
@@ -1498,12 +1702,32 @@ namespace raisimUnity
 
             ulong numContacts = _tcpHelper.GetDataUlong();
 
-            // clear contacts 
-            ClearContacts();
-
             // create contact marker
             List<Tuple<Vector3, Vector3>> contactList = new List<Tuple<Vector3, Vector3>>();
             float forceMaxNorm = 0;
+            
+            for (ulong markerID = _nCreatedArrowsForContactForce; markerID < numContacts; markerID++)
+            {
+                var forceMaker = GameObject.Instantiate(_arrowMesh);
+                var posMarker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+
+                forceMaker.name = "contactForce" + markerID.ToString();
+                posMarker.name = "contactPosition" + markerID.ToString();
+                forceMaker.tag = VisualTag.Both;
+                posMarker.tag = VisualTag.Both;
+                forceMaker.transform.SetParent(_contactForcesRoot.transform, true);
+                posMarker.transform.SetParent(_contactPointsRoot.transform, true);
+                forceMaker.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+                posMarker.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+                
+                _objectController.SetContactMarker(
+                    posMarker, new Vector3(0,0,0), Color.red, _contactPointMarkerScale);
+                _objectController.SetContactForceMarker(
+                    forceMaker, new Vector3(0,0,0), new Vector3(1,1,1), Color.blue,
+                    _contactForceMarkerScale);
+
+                _nCreatedArrowsForContactForce = markerID+1;
+            }
 
             for (ulong i = 0; i < numContacts; i++)
             {
@@ -1525,20 +1749,32 @@ namespace raisimUnity
             
             for (ulong i = 0; i < numContacts; i++)
             {
+                var forceMaker = _contactForcesRoot.transform.Find("contactForce" + i.ToString()).gameObject;
+                var posMarker = _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject;
+                
                 var contact = contactList[(int) i];
 
                 if (contact.Item2.magnitude > 0)
                 {
-                    if(_showContactPoints)
-                        _objectController.CreateContactMarker(
-                            _contactPointsRoot, (int)i, contact.Item1, _contactPointMarkerScale);
+                    if (_showContactPoints)
+                    {
+                        _objectController.SetContactMarker(
+                            posMarker, contact.Item1, Color.red, _contactPointMarkerScale);
+                        posMarker.SetActive(true);
+                    }
 
                     if (_showContactForces)
                     {
-                        _objectController.CreateContactForceMarker(
-                            _contactForcesRoot, (int) i, contact.Item1, contact.Item2 / forceMaxNorm,
+                        _objectController.SetContactForceMarker(
+                            forceMaker, contact.Item1, contact.Item2 / forceMaxNorm, Color.blue,
                             _contactForceMarkerScale);
+                        forceMaker.SetActive(true);
                     }
+                }
+                else
+                {
+                    forceMaker.SetActive(false);
+                    posMarker.SetActive(false);
                 }
             }
         }
@@ -1658,17 +1894,17 @@ namespace raisimUnity
                 }
             }
 
-            // Contact points
-            foreach (Transform contact in _contactPointsRoot.transform)
-            {
-                contact.gameObject.GetComponent<Renderer>().enabled = _showContactPoints;
-            }
-            
-            // Contact forces
-            foreach (Transform contact in _contactForcesRoot.transform)
-            {
-                contact.gameObject.GetComponentInChildren<Renderer>().enabled = _showContactForces;
-            }
+            // // Contact points
+            // foreach (Transform contact in _contactPointsRoot.transform)
+            // {
+            //     contact.gameObject.GetComponent<Renderer>().enabled = _showContactPoints;
+            // }
+            //
+            // // Contact forces
+            // foreach (Transform contact in _contactForcesRoot.transform)
+            // {
+            //     contact.gameObject.GetComponentInChildren<Renderer>().enabled = _showContactForces;
+            // }
             
             // Body frames
             foreach (var obj in GameObject.FindGameObjectsWithTag(VisualTag.Frame))

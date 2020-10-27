@@ -52,6 +52,8 @@ namespace raisimUnity
         private GameObject _arrowMesh;
         private Shader _standardShader;
 
+        private string _colorString;
+
         public ObjectController(GameObject cache)
         {
             _objectCache = cache;
@@ -62,10 +64,12 @@ namespace raisimUnity
             if (GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
             {
                 _standardShader = Shader.Find("HDRP/Lit");
+                _colorString = "_BaseColor";
             }
             else
             {
                 _standardShader = Shader.Find("Standard");
+                _colorString = "_Color";
             }
 
         }
@@ -95,7 +99,7 @@ namespace raisimUnity
             xAxisMarker.name = "frameX";
             xAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(-1, 0, 0));
             xAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
-            xAxisMarker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.red);
+            xAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.red);
             
             var yAxisMarker = GameObject.Instantiate(_arrowMesh);
             yAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
@@ -104,7 +108,7 @@ namespace raisimUnity
             yAxisMarker.name = "frameY";
             yAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(0, 1, 0));
             yAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
-            yAxisMarker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.blue);
+            yAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.blue);
             
             var zAxisMarker = GameObject.Instantiate(_arrowMesh);
             zAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
@@ -113,7 +117,7 @@ namespace raisimUnity
             zAxisMarker.name = "frameZ";
             zAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(0, 0, -1));
             zAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
-            zAxisMarker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.green);
+            zAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.green);
             
             return rootObj;
         }
@@ -402,33 +406,26 @@ namespace raisimUnity
             return mesh;
         }
 
-        public GameObject CreateContactMarker(GameObject root, int index, Vector3 rsPos, float markerScale = 1)
+        public GameObject SetContactMarker(GameObject marker, Vector3 rsPos, Color color, float markerScale = 1)
         {
             markerScale = Math.Max(Math.Min(10.0f, markerScale), 0.1f);
-            
-            var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            marker.transform.SetParent(root.transform, true);
+
             marker.transform.localScale = new Vector3(0.06f * markerScale, 0.06f * markerScale, 0.06f * markerScale);
             marker.GetComponent<Collider>().enabled = false;
 
             marker.tag = "contact";
-            marker.name = "contact" + index.ToString();
             Quaternion q = new Quaternion(0, 0, 0, 1);
             SetTransform(marker, rsPos, q);
             marker.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
-            marker.GetComponent<Renderer>().material.SetColor("_Color", Color.red);
+            marker.GetComponent<Renderer>().material.SetColor(_colorString, color);
             return marker;
         }
         
-        public GameObject CreateContactForceMarker(GameObject root, int index, Vector3 rsPos, Vector3 force, float markerScale = 1)
+        public GameObject SetContactForceMarker(GameObject marker, Vector3 rsPos, Vector3 force, Color color, float markerScale = 1)
         {
             markerScale = Math.Max(Math.Min(10.0f, markerScale), 0.1f);
-
-            var marker = GameObject.Instantiate(_arrowMesh);
             marker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
-            marker.transform.SetParent(root.transform, true);
             marker.tag = "contact";
-            marker.name = "contactForce" + index.ToString();
             
             Vector3 axis = new Vector3(force.x, force.z, force.y);
             axis.Normalize();
@@ -442,7 +439,7 @@ namespace raisimUnity
                 0.3f * markerScale * force.magnitude,
                 1.0f * markerScale * force.magnitude
             );
-            marker.GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.blue);
+            marker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, color);
             return marker;
         }
         
