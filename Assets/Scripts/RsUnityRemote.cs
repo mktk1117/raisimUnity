@@ -766,6 +766,7 @@ namespace raisimUnity
             _nCreatedArrowsForContactPoints = 0;
             _nCreatedArrowsForExternalForce = 0;
             _nCreatedArrowsForExternalTorque = 0;
+            _nCreatedPolyLineBox = 0;
             
             // clear appearances
             if(_xmlReader != null)
@@ -1472,6 +1473,8 @@ namespace raisimUnity
             numObjects = _tcpHelper.GetDataUlong();
             List<List<Vector3>> lineList = new List<List<Vector3>>();
             List<Color> colorList = new List<Color>();
+            List<double> widthList = new List<double>();
+
             ulong polyLineSegN = 0;
 
             for (ulong i = 0; i < numObjects; i++)
@@ -1481,10 +1484,13 @@ namespace raisimUnity
                 double colorG = _tcpHelper.GetDataDouble();
                 double colorB = _tcpHelper.GetDataDouble();
                 double colorA = _tcpHelper.GetDataDouble();
+                double width = _tcpHelper.GetDataDouble();
+                widthList.Add(width);
                 colorList.Add(new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
                 
                 var npoints = _tcpHelper.GetDataUlong();
-                polyLineSegN += npoints - 1;
+                if (npoints != 0)
+                    polyLineSegN += npoints - 1;
                 lineList.Add(new List<Vector3>());
                 for (ulong j = 0; j < npoints; j++)
                     lineList.Last().Add(new Vector3((float)_tcpHelper.GetDataDouble(), (float)_tcpHelper.GetDataDouble(), (float)_tcpHelper.GetDataDouble()));
@@ -1501,9 +1507,9 @@ namespace raisimUnity
             }
 
             ulong boxyId = 0;
-            for (ulong i = 0; i < numObjects; i++)
+            for (int i = 0; i < lineList.Count; i++)
             {
-                var line = lineList[(int) i];
+                var line = lineList[i];
                 for (int j = 0; j < line.Count-1; j++)
                 {
                     var box = _polylineRoot.transform.Find("polylines" + boxyId.ToString()).gameObject;
@@ -1522,7 +1528,7 @@ namespace raisimUnity
                                               (pos1[2] - pos2[2]) * (pos1[2] - pos2[2]));
                     box.GetComponent<Renderer>().material.SetColor(_colorString, colorList[(int)i]);
                     
-                    box.transform.localScale = new Vector3((float)0.005, (float)length, (float)0.005);
+                    box.transform.localScale = new Vector3((float)widthList[i], (float)length, (float)widthList[i]);
                 }
             }
             
