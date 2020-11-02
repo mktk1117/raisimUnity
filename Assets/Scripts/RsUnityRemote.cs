@@ -504,7 +504,6 @@ namespace raisimUnity
                         {
                             try
                             {
-                          
                                 // Start reinitializing
                                 _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
                                 if (_tcpHelper.ReadData() <= 0)
@@ -552,41 +551,43 @@ namespace raisimUnity
 
                                     _deleteObjects = false;
                                 }
-                                
-                                if (_numInitializedObjects < _numWorldObjects)
+
+                                if (_numInitializedObjects <= _numWorldObjects)
                                 {
                                     // Reinitialize objects from data
                                     // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                     PartiallyInitializeObjects();
-                                }
-                                else if (_numInitializedObjects == _numWorldObjects)
-                                {
-                                    // Reinitialization done 
-                                    _clientStatus = ClientStatus.ReinitializeVisualsStart;
-                                    
-                                    _wireN = _tcpHelper.GetDataUlong();
-                                    for (ulong i = 0; i < _wireN; i++)
+                                    if (_numInitializedObjects == _numWorldObjects)
                                     {
-                                        var objFrame = _objectController.CreateRootObject(_objectsRoot, "wire"+i);
-                                        var cylinder = _objectController.CreateCylinder(objFrame, 1, 1);
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material = _wireMaterial;
-                                        cylinder.tag = VisualTag.Both;    
-                                    }
+                                        // Reinitialization done 
+                                        _clientStatus = ClientStatus.ReinitializeVisualsStart;
 
-                                    // Disable other cameras than main camera
-                                    foreach (var cam in Camera.allCameras)
-                                    {
-                                        if (cam == Camera.main) continue;
-                                        cam.enabled = false;
-                                    }
+                                        _wireN = _tcpHelper.GetDataUlong();
+                                        for (ulong i = 0; i < _wireN; i++)
+                                        {
+                                            var objFrame = _objectController.CreateRootObject(_objectsRoot, "wire" + i);
+                                            var cylinder = _objectController.CreateCylinder(objFrame, 1, 1);
+                                            cylinder.GetComponentInChildren<MeshRenderer>().material.shader =
+                                                _standardShader;
+                                            cylinder.GetComponentInChildren<MeshRenderer>().material = _wireMaterial;
+                                            cylinder.tag = VisualTag.Both;
+                                        }
 
-                                    // Show / hide objects
-                                    ShowOrHideObjects();
-                                    
-                                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructLookAt();
+                                        // Disable other cameras than main camera
+                                        foreach (var cam in Camera.allCameras)
+                                        {
+                                            if (cam == Camera.main) continue;
+                                            cam.enabled = false;
+                                        }
+
+                                        // Show / hide objects
+                                        ShowOrHideObjects();
+
+                                        GameObject.Find("_CanvasSidebar").GetComponent<UIController>()
+                                            .ConstructLookAt();
+                                    }
                                 }
-                                else
+                                else if (_numInitializedObjects > _numWorldObjects)
                                 {
                                     new RsuException("RsUnityRemote: got more objects than expected");
                                 }
@@ -642,28 +643,27 @@ namespace raisimUnity
                         {
                             try
                             {
-                                if (_numInitializedVisuals < _numWorldVisuals)
+                                if (_numInitializedVisuals <= _numWorldVisuals)
                                 {
                                     // Reinitialize objects from data
                                     // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                     PartiallyInitializeVisuals();
-                                }
-                                else if (_numInitializedVisuals == _numWorldVisuals)
-                                {
-                                    // Reinitialization done 
-                                    _clientStatus = ClientStatus.UpdateObjectPosition;
-
-                                    // Disable other cameras than main camera
-                                    foreach (var cam in Camera.allCameras)
+                                    if (_numInitializedVisuals == _numWorldVisuals)
                                     {
-                                        if (cam == Camera.main) continue;
-                                        cam.enabled = false;
-                                    }
+                                        // Reinitialization done 
+                                        _clientStatus = ClientStatus.UpdateObjectPosition;
 
-                                    // Show / hide objects
-                                    ShowOrHideObjects();
-                                }
-                                else
+                                        // Disable other cameras than main camera
+                                        foreach (var cam in Camera.allCameras)
+                                        {
+                                            if (cam == Camera.main) continue;
+                                            cam.enabled = false;
+                                        }
+
+                                        // Show / hide objects
+                                        ShowOrHideObjects();
+                                    }
+                                } else if (_numInitializedVisuals > _numWorldVisuals)
                                 {
                                     new RsuException("RsUnityRemote: got more visuals than expected");
                                 }
