@@ -137,6 +137,24 @@ namespace raisimUnity
                     return meshPath;
                 }
             }
+
+            // 7. raw path
+            {
+                var meshPath = Path.Combine(meshDirPathInServer, meshNameRaw);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
+            
+            // 7. raw path with the parent
+            {
+                var meshPath = Path.Combine(parent, meshNameRaw);
+                if (File.Exists(meshPath))
+                {
+                    return meshPath;
+                }
+            }
             
             // checking in the resource directories
             
