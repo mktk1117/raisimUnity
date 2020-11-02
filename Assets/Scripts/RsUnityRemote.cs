@@ -1578,7 +1578,8 @@ namespace raisimUnity
                 forceMaker.name = "externalForce" + markerID.ToString();
                 forceMaker.tag = VisualTag.Both;
                 forceMaker.transform.SetParent(_contactForcesRoot.transform, true);
-                
+                forceMaker.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+
                 _objectController.SetContactForceMarker(
                     forceMaker, new Vector3(0,0,0), new Vector3(1,1,1), Color.green,
                     _contactForceMarkerScale);
@@ -1632,7 +1633,8 @@ namespace raisimUnity
                 forceMaker.name = "externalTorque" + markerID.ToString();
                 forceMaker.tag = VisualTag.Both;
                 forceMaker.transform.SetParent(_contactForcesRoot.transform, true);
-                
+                forceMaker.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+
                 _objectController.SetContactForceMarker(
                     forceMaker, new Vector3(0,0,0), new Vector3(1,1,1), Color.yellow,
                     _contactForceMarkerScale);
@@ -1782,6 +1784,14 @@ namespace raisimUnity
                     forceMaker.SetActive(false);
                     posMarker.SetActive(false);
                 }
+            }
+            
+            for (ulong i = numContacts; i < _nCreatedArrowsForContactForce; i++)
+            {
+                var forceMaker = _contactForcesRoot.transform.Find("contactForce" + i.ToString()).gameObject;
+                forceMaker.SetActive(false);
+                var posMarker = _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject;
+                posMarker.SetActive(false);
             }
         }
         

@@ -427,7 +427,7 @@ namespace raisimUnity
             marker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
             marker.tag = "contact";
             
-            Vector3 axis = new Vector3(force.x, force.z, force.y);
+            Vector3 axis = new Vector3(-force.x, force.z, -force.y);
             axis.Normalize();
             
             marker.transform.localPosition = new Vector3(-rsPos.x, rsPos.z, -rsPos.y);
