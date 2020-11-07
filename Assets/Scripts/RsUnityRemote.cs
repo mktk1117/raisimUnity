@@ -157,7 +157,6 @@ namespace raisimUnity
         private string _colorString;
         
         // objects reinitialize
-        private bool _deleteObjects = false;
         private bool _initialization = true;
         
         // visualization arrows
@@ -290,11 +289,17 @@ namespace raisimUnity
                             {
                                 if (_initialization)
                                 {
-                                    _loadingModalView.Show(true);
-                                    _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
-                                    _loadingModalView.SetMessage("Loading resources...");
-                                    _loadingModalView.SetProgress(0);
-
+                                    // If server side has been changed, initialize objects clear objects first
+                                    foreach (Transform objT in _objectsRoot.transform)
+                                    {
+                                        Destroy(objT.gameObject);
+                                    }
+                                    
+                                    foreach (Transform objT in _visualsRoot.transform)
+                                    {
+                                        Destroy(objT.gameObject);
+                                    }
+                                    
                                     // Read XML string
                                     // ReadXmlString();
 
@@ -318,23 +323,8 @@ namespace raisimUnity
                                     _objectConfiguration = _tcpHelper.GetDataUlong();
                                     _numWorldObjects = _tcpHelper.GetDataUlong();
                                     _numInitializedObjects = 0;
+                                    _numInitializedVisuals = 0;
                                     _initialization = false;
-                                }
-
-                                if (_deleteObjects)
-                                {
-                                    // If server side has been changed, initialize objects clear objects first
-                                    foreach (Transform objT in _objectsRoot.transform)
-                                    {
-                                        Destroy(objT.gameObject);
-                                    }
-                                    
-                                    foreach (Transform objT in _visualsRoot.transform)
-                                    {
-                                        Destroy(objT.gameObject);
-                                    }
-
-                                    _deleteObjects = false;
                                 }
                                 
                                 if (_numInitializedObjects < _numWorldObjects)
@@ -342,32 +332,46 @@ namespace raisimUnity
                                     // Initialize objects from data
                                     // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                     PartiallyInitializeObjects();
-                                    _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);
-                                }
-                                else if (_numInitializedObjects == _numWorldObjects)
-                                {
-                                    _wireN = _tcpHelper.GetDataUlong();
-                                    for (ulong i = 0; i < _wireN; i++)
+
+                                    // if (_numInitializedObjects < _numWorldObjects)
+                                    // {
+                                    //     _loadingModalView.Show(true);
+                                    //     _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
+                                    //     _loadingModalView.SetMessage("Loading resources...");
+                                    //     _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);    
+                                    // }
+                                    if (_numInitializedObjects == _numWorldObjects)
                                     {
-                                        var objFrame = _objectController.CreateRootObject(_objectsRoot, "wire"+i);
-                                        var cylinder = _objectController.CreateCylinder(objFrame, 1, 1);
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material = _wireMaterial;
-                                        cylinder.tag = VisualTag.Both;    
+                                        _wireN = _tcpHelper.GetDataUlong();
+                                        for (ulong i = 0; i < _wireN; i++)
+                                        {
+                                            var objFrame = _objectController.CreateRootObject(_objectsRoot, "wire" + i);
+                                            var cylinder = _objectController.CreateCylinder(objFrame, 1, 1);
+                                            cylinder.GetComponentInChildren<MeshRenderer>().material.shader =
+                                                _standardShader;
+                                            cylinder.GetComponentInChildren<MeshRenderer>().material = _wireMaterial;
+                                            cylinder.tag = VisualTag.Both;
+                                        }
                                     }
-                                    UpdateObjectsPositionImpl(false);
-                                    
-                                    _numWorldVisuals = _tcpHelper.GetDataUlong();
-                                    _numInitializedVisuals = 0;
+                                }
+                                
+                                if (_numInitializedObjects == _numWorldObjects)
+                                {
+                                    if(_numInitializedVisuals == 0)
+                                        _numWorldVisuals = _tcpHelper.GetDataUlong();
                                     
                                     if (_numInitializedVisuals < _numWorldVisuals)
                                     {
                                         // Initialize visuals from data
                                         // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                         PartiallyInitializeVisuals();
-                                        _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);
+                                        // if (_numInitializedVisuals < _numWorldVisuals)
+                                        // {
+                                        //     _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);    
+                                        // }
                                     }
-                                    else if (_numInitializedVisuals == _numWorldVisuals)
+                                    
+                                    if (_numInitializedVisuals == _numWorldVisuals)
                                     {
                                         // Disable other cameras than main camera
                                         foreach (var cam in Camera.allCameras)
@@ -375,29 +379,48 @@ namespace raisimUnity
                                             if (cam == Camera.main) continue;
                                             cam.enabled = false;
                                         }
+                                        UpdateObjectsPosition();
 
                                         // Initialization done 
                                         _clientStatus = ClientStatus.UpdateObjectPosition;
+                                        _initialization = true;
                                         ShowOrHideObjects();
-                                        _loadingModalView.Show(false);
+                                        // _loadingModalView.Show(false);
                                         GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructLookAt();
                                     }
                                 }
                             } catch (Exception e)
                             {
-                                new RsuException(e, "RsUnityRemote: InitializeObjectsStart");
+                                new RsuException(e, "RsUnityRemote: InitializeObjects");
                             }
                             
                             break;
                         }
                         //**********************************************************************************************
-                        // Step 5-1
+                        // Step 2
                         //**********************************************************************************************
                         case ClientStatus.UpdateObjectPosition:
                         {
                             try
                             {
                                 // update object position
+                                _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestObjectPosition));
+                                if (_tcpHelper.ReadData() <= 0)
+                                    new RsuException("Cannot read data from TCP");
+
+                                ServerStatus state = _tcpHelper.GetDataServerStatus();
+                                processServerRequest();
+
+                                if (state == ServerStatus.StatusTerminating)
+                                {
+                                    return;
+                                }
+                                else if (state == ServerStatus.StatusHibernating)
+                                {
+                                    _clientStatus = ClientStatus.UpdateObjectPosition;
+                                    return;
+                                }
+
                                 UpdateObjectsPosition();
                                 
                                 if(_showContactPoints || _showContactForces)
@@ -1078,32 +1101,9 @@ namespace raisimUnity
                     break;
             }
         }
-
-        private void UpdateObjectsPosition()
-        {
-            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestObjectPosition));
-            if (_tcpHelper.ReadData() <= 0)
-                new RsuException("Cannot read data from TCP");
-
-            ServerStatus state = _tcpHelper.GetDataServerStatus();
-            processServerRequest();
-
-            if (state == ServerStatus.StatusTerminating)
-            {
-                return;
-            }
-            else if (state == ServerStatus.StatusHibernating)
-            {
-                _clientStatus = ClientStatus.UpdateObjectPosition;
-                return;
-            }
-
-            UpdateObjectsPositionImpl();
-        }
         
-        private void UpdateObjectsPositionImpl(bool reinitialization=false) 
+        private void UpdateObjectsPosition() 
         {
-
             ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
             if (messageType != ServerMessageType.ObjectPositionUpdate)
             {
@@ -1112,16 +1112,9 @@ namespace raisimUnity
             
             ulong configurationNumber = _tcpHelper.GetDataUlong();
 
-            if (configurationNumber != _objectConfiguration && !reinitialization)
+            if (configurationNumber != _objectConfiguration)
             {
-                // this means the object was added or deleted from server size
-                _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
-                if (_tcpHelper.ReadData() <= 0)
-                    new RsuException("Cannot read data from TCP");
-                
                 _numInitializedObjects = 0;
-                _deleteObjects = true;
-                
                 _clientStatus = ClientStatus.InitializingObjects;
                 return;
             }
