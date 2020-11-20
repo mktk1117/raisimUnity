@@ -296,13 +296,6 @@ namespace raisimUnity
             }
         }
 
-        public void SetToFreeCam()
-        {
-            var LookAtDropdown = GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>();
-            LookAtDropdown.value = 0;
-            _camera.Follow(null);
-        }
-
         public void ConstructLookAt()
         {
             var LookAtDropdown = GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>();
@@ -314,9 +307,10 @@ namespace raisimUnity
             
             LookAtDropdown.ClearOptions ();
             LookAtDropdown.AddOptions(_lookAtOptions);
+
             LookAtDropdown.onValueChanged.AddListener(delegate {
                 ChangeLookAt(LookAtDropdown);
-                // DynamicGI.UpdateEnvironment();
+                DynamicGI.UpdateEnvironment();
             });
         }
         
@@ -342,11 +336,6 @@ namespace raisimUnity
 
             // Show recording status
             var recordButton = GameObject.Find(_ButtonRecordName);
-
-            if (_camera.GetSelected() == null)
-            {
-                SetToFreeCam();
-            }
             
             if (_camera.IsRecording)
             {

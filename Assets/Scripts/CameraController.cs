@@ -115,7 +115,7 @@ public class CameraController : MonoBehaviour
     {
         get => threadIsProcessing;
     }
-    
+
     public void Follow(string obj, Vector3 pos)
     {
         _toFollow = obj;
@@ -125,11 +125,6 @@ public class CameraController : MonoBehaviour
     public void Follow(string obj)
     {
         _toFollow = obj;
-    }
-
-    public GameObject GetSelected()
-    {
-        return _selected;
     }
 
     IEnumerator Start () 
