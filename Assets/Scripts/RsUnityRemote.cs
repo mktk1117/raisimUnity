@@ -258,20 +258,9 @@ namespace raisimUnity
                             {
                                 // Server hibernating
                                 ClearScene();
-
-                                _tcpHelper.WriteData(
-                                    BitConverter.GetBytes((int) ClientMessageType.RequestServerStatus));
-                                if (_tcpHelper.ReadData() <= 0)
-                                    new RsuException("RsUnityRemote: Cannot read data from TCP");
-
-                                ServerStatus state = _tcpHelper.GetDataServerStatus();
-                                processServerRequest();
-
-                                if (state == ServerStatus.StatusRendering)
-                                {
-                                    // Go to InitializeObjectsStart
-                                    _clientStatus = ClientStatus.InitializingObjects;
-                                }
+                                _tcpHelper.CloseConnection();
+                                _clientStatus = ClientStatus.InitializingObjects;
+                                ReadAndCheckServer(ClientMessageType.RequestServerStatus);
                             }
                             catch (Exception e)
                             {
@@ -291,40 +280,24 @@ namespace raisimUnity
                                 {
                                     // If server side has been changed, initialize objects clear objects first
                                     foreach (Transform objT in _objectsRoot.transform)
-                                    {
                                         Destroy(objT.gameObject);
-                                    }
                                     
                                     foreach (Transform objT in _visualsRoot.transform)
-                                    {
                                         Destroy(objT.gameObject);
-                                    }
                                     
                                     // Read XML string
                                     // ReadXmlString();
-
-                                    // Start initialization
-                                    _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestInitializeObjects));
-                                    if (_tcpHelper.ReadData() <= 0)
-                                        new RsuException("RsUnityRemote: Cannot read data from TCP");
-
-                                    ServerStatus state = _tcpHelper.GetDataServerStatus();
-                                    processServerRequest();
-
-                                    if (state == ServerStatus.StatusTerminating)
-                                        new RsuException("RsUnityRemote: Server is terminating");
-                                    else if (state == ServerStatus.StatusHibernating)
+                                    if (ReadAndCheckServer(ClientMessageType.RequestInitializeObjects) != ServerMessageType.Initialization)
                                         return;
-
-                                    ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-                                    if (messageType != ServerMessageType.Initialization)
-                                        new RsuException("RsUnityRemote: The server sends a wrong message");
-
                                     _objectConfiguration = _tcpHelper.GetDataUlong();
                                     _numWorldObjects = _tcpHelper.GetDataUlong();
                                     _numInitializedObjects = 0;
                                     _numInitializedVisuals = 0;
                                     _initialization = false;
+                                    // _loadingModalView.Show(true);
+                                    // _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
+                                    // _loadingModalView.SetMessage("Loading resources...");
+                                    // _loadingModalView.SetProgress((float) 0 / _numWorldObjects);
                                 }
                                 
                                 if (_numInitializedObjects < _numWorldObjects)
@@ -332,14 +305,8 @@ namespace raisimUnity
                                     // Initialize objects from data
                                     // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                     PartiallyInitializeObjects();
+                                    // _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);   
 
-                                    // if (_numInitializedObjects < _numWorldObjects)
-                                    // {
-                                    //     _loadingModalView.Show(true);
-                                    //     _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
-                                    //     _loadingModalView.SetMessage("Loading resources...");
-                                    //     _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);    
-                                    // }
                                     if (_numInitializedObjects == _numWorldObjects)
                                     {
                                         _wireN = _tcpHelper.GetDataUlong();
@@ -365,10 +332,7 @@ namespace raisimUnity
                                         // Initialize visuals from data
                                         // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                         PartiallyInitializeVisuals();
-                                        // if (_numInitializedVisuals < _numWorldVisuals)
-                                        // {
-                                        //     _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);    
-                                        // }
+                                        // _loadingModalView.SetProgress((float) _numInitializedVisuals / _numWorldVisuals);   
                                     }
                                     
                                     if (_numInitializedVisuals == _numWorldVisuals)
@@ -403,25 +367,11 @@ namespace raisimUnity
                         {
                             try
                             {
-                                // update object position
-                                _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestObjectPosition));
-                                if (_tcpHelper.ReadData() <= 0)
-                                    new RsuException("Cannot read data from TCP");
-
-                                ServerStatus state = _tcpHelper.GetDataServerStatus();
-                                processServerRequest();
-
-                                if (state == ServerStatus.StatusTerminating)
-                                {
+                                if(ReadAndCheckServer(ClientMessageType.RequestObjectPosition) != ServerMessageType.ObjectPositionUpdate)
                                     return;
-                                }
-                                else if (state == ServerStatus.StatusHibernating)
-                                {
-                                    _clientStatus = ClientStatus.UpdateObjectPosition;
+                                
+                                if (!UpdateObjectsPosition())
                                     return;
-                                }
-
-                                UpdateObjectsPosition();
                                 
                                 if(_showContactPoints || _showContactForces)
                                     UpdateContacts();
@@ -459,7 +409,9 @@ namespace raisimUnity
                     // Modal view
                     _errorModalView.Show(true);
                     _errorModalView.SetMessage(e.Message);
-
+                    _clientStatus = ClientStatus.Idle;
+                    ClearScene();
+                    
                     // Close connection
                     _tcpHelper.CloseConnection();
                 }
@@ -1102,21 +1054,15 @@ namespace raisimUnity
             }
         }
         
-        private void UpdateObjectsPosition() 
+        private bool UpdateObjectsPosition() 
         {
-            ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-            if (messageType != ServerMessageType.ObjectPositionUpdate)
-            {
-                return;
-            }
-            
             ulong configurationNumber = _tcpHelper.GetDataUlong();
 
             if (configurationNumber != _objectConfiguration)
             {
                 _numInitializedObjects = 0;
                 _clientStatus = ClientStatus.InitializingObjects;
-                return;
+                return false;
             }
             
             ulong numObjects = _tcpHelper.GetDataUlong();
@@ -1440,35 +1386,49 @@ namespace raisimUnity
             // Update object position done.
             // Go to visual object position update
             _clientStatus = ClientStatus.UpdateObjectPosition;
+
+            return true;
         }
 
-        private void UpdateContacts()
+        private ServerMessageType ReadAndCheckServer(ClientMessageType type)
         {
-            System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew(); 
-
-            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestContactInfos));
-            sw.Stop();
-            double time = sw.Elapsed.TotalSeconds;
-
-            if (_tcpHelper.ReadData() <= 0)
-                new RsuException("Cannot read data from TCP");
-            
-            ServerStatus state = _tcpHelper.GetDataServerStatus();
-            if (state == ServerStatus.StatusTerminating)
-                new RsuException("Server is terminating");
-            else if (state == ServerStatus.StatusHibernating)
+            int counter = 0;
+            int receivedData = 0;
+            while (counter++ < 1 && receivedData == 0)
             {
-                _clientStatus = ClientStatus.UpdateObjectPosition;
-                return;
+                _tcpHelper.WriteData(BitConverter.GetBytes((int) type));
+                receivedData = _tcpHelper.ReadData();
             }
+
+            if (receivedData == 0)
+            {
+                new RsuException("cannot connect");
+            }
+
+            ServerStatus state = _tcpHelper.GetDataServerStatus();
             processServerRequest();
 
-            ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-            if (messageType != ServerMessageType.ContactInfoUpdate)
+            if (state == ServerStatus.StatusTerminating)
             {
-                new RsuException("The server sends a wrong message");
+                new RsuException("Server is terminating");
+                return ServerMessageType.Reset;
             }
+            else if (state == ServerStatus.StatusHibernating)
+            {
+                _clientStatus = ClientStatus.Idle;
+                return ServerMessageType.Reset;
+            }
+            else
+            {
+                return _tcpHelper.GetDataServerMessageType();
+            }
+        }
 
+        private bool UpdateContacts()
+        {
+            if (ReadAndCheckServer(ClientMessageType.RequestContactInfos) != ServerMessageType.ContactInfoUpdate)
+                return false;
+            
             ulong numContacts = _tcpHelper.GetDataUlong();
 
             // create contact marker
@@ -1554,6 +1514,8 @@ namespace raisimUnity
                 var posMarker = _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject;
                 posMarker.SetActive(false);
             }
+            
+            return true;
         }
         
         private void ReadXmlString()

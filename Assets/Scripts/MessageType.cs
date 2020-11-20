@@ -35,6 +35,7 @@ namespace raisimUnity
         ConfigXml,
         VisualInitialization,
         VisualPositionUpdate,
+        Reset,
     }
 
     enum ClientMessageType : int
