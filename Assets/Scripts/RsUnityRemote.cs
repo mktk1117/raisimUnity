@@ -407,8 +407,10 @@ namespace raisimUnity
                 catch (Exception e)
                 {
                     // Modal view
-                    _errorModalView.Show(true);
-                    _errorModalView.SetMessage(e.Message);
+                    // _errorModalView.Show(true);
+                    // _errorModalView.SetMessage(e.Message);
+                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState(e.Message);
+
                     _clientStatus = ClientStatus.Idle;
                     ClearScene();
                     

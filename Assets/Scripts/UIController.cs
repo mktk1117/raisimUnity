@@ -320,8 +320,10 @@ namespace raisimUnity
             // Set style once
             if (_style == null)
             {
-                _style = GUI.skin.textField;
+                // _style = GUI.skin.textField;
+                _style = GUI.skin.textArea;
                 _style.normal.textColor = Color.white;
+                _style.alignment = TextAnchor.LowerRight;
 
                 // scale font size with DPI
                 if (Screen.dpi < 100)
@@ -331,8 +333,16 @@ namespace raisimUnity
                 else
                     _style.fontSize = Mathf.RoundToInt(14 + (Screen.dpi - 100.0f) * 0.1f);
             }
+
             
-            GUILayout.Label(_state, _style);
+            GUILayout.BeginArea(new Rect(Screen.width - _state.Length*_style.fontSize/2, Screen.height-_style.fontSize*2, _state.Length*_style.fontSize/2, _style.fontSize*2), _style);  
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(_state);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
+            
 
             // Show recording status
             var recordButton = GameObject.Find(_ButtonRecordName);
