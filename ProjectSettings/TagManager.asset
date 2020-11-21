@@ -9,6 +9,7 @@ TagManager:
   - contact
   - frame
   - both
+  - articulated_system_collision
   layers:
   - Default
   - TransparentFX

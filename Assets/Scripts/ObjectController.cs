@@ -89,35 +89,35 @@ namespace raisimUnity
             rootObj.transform.SetParent(root.transform, false);
             
             // Frame
-            var bodyFrame = new GameObject("frame");
-            bodyFrame.transform.SetParent(rootObj.transform, false);
-            
-            var xAxisMarker = GameObject.Instantiate(_arrowMesh);
-            xAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
-            xAxisMarker.transform.SetParent(bodyFrame.transform, false);
-            xAxisMarker.tag = "frame";
-            xAxisMarker.name = "frameX";
-            xAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(-1, 0, 0));
-            xAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
-            xAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.red);
-            
-            var yAxisMarker = GameObject.Instantiate(_arrowMesh);
-            yAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
-            yAxisMarker.transform.SetParent(bodyFrame.transform, false);
-            yAxisMarker.tag = "frame";
-            yAxisMarker.name = "frameY";
-            yAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(0, 1, 0));
-            yAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
-            yAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.blue);
-            
-            var zAxisMarker = GameObject.Instantiate(_arrowMesh);
-            zAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
-            zAxisMarker.transform.SetParent(bodyFrame.transform, false);
-            zAxisMarker.tag = "frame";
-            zAxisMarker.name = "frameZ";
-            zAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(0, 0, -1));
-            zAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
-            zAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.green);
+            // var bodyFrame = new GameObject("frame");
+            // bodyFrame.transform.SetParent(rootObj.transform, false);
+            //
+            // var xAxisMarker = GameObject.Instantiate(_arrowMesh);
+            // xAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            // xAxisMarker.transform.SetParent(bodyFrame.transform, false);
+            // xAxisMarker.tag = "frame";
+            // xAxisMarker.name = "frameX";
+            // xAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(-1, 0, 0));
+            // xAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
+            // xAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.red);
+            //
+            // var yAxisMarker = GameObject.Instantiate(_arrowMesh);
+            // yAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            // yAxisMarker.transform.SetParent(bodyFrame.transform, false);
+            // yAxisMarker.tag = "frame";
+            // yAxisMarker.name = "frameY";
+            // yAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(0, 1, 0));
+            // yAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
+            // yAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.blue);
+            //
+            // var zAxisMarker = GameObject.Instantiate(_arrowMesh);
+            // zAxisMarker.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            // zAxisMarker.transform.SetParent(bodyFrame.transform, false);
+            // zAxisMarker.tag = "frame";
+            // zAxisMarker.name = "frameZ";
+            // zAxisMarker.transform.localRotation = Quaternion.LookRotation(new Vector3(0, 0, -1));
+            // zAxisMarker.transform.localScale = new Vector3(0.03f, 0.03f, 0.1f);
+            // zAxisMarker.GetComponentInChildren<Renderer>().material.SetColor(_colorString, Color.green);
             
             return rootObj;
         }
