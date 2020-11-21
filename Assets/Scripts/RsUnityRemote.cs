@@ -81,6 +81,7 @@ namespace raisimUnity
     {
         public const string Visual = "visual";
         public const string Collision = "collision";
+        public const string ArticulatedSystemCollision = "articulated_system_collision";
         public const string Frame = "frame";
         public const string Both = "both";
     }
@@ -151,7 +152,6 @@ namespace raisimUnity
         
         // Configuration number (should be always matched with server)
         private ulong _objectConfiguration = 0; 
-        private ulong _visualConfiguration = 0;
         private CameraController _camera = null;
         private string _defaultShader;
         private string _colorString;
@@ -161,7 +161,6 @@ namespace raisimUnity
         
         // visualization arrows
         private ulong _nCreatedArrowsForContactForce = 0;
-        private ulong _nCreatedArrowsForContactPoints = 0;
         private ulong _nCreatedArrowsForExternalForce = 0;
         private ulong _nCreatedArrowsForExternalTorque = 0;
         private ulong _nCreatedPolyLineBox = 0;
@@ -494,7 +493,6 @@ namespace raisimUnity
             }
 
             _nCreatedArrowsForContactForce = 0;
-            _nCreatedArrowsForContactPoints = 0;
             _nCreatedArrowsForExternalForce = 0;
             _nCreatedArrowsForExternalTorque = 0;
             _nCreatedPolyLineBox = 0;
@@ -553,7 +551,7 @@ namespace raisimUnity
                             if (visItem == 0)
                                 tag = VisualTag.Visual;
                             else if (visItem == 1)
-                                tag = VisualTag.Collision;
+                                tag = VisualTag.ArticulatedSystemCollision;
 
                             if (shapeType == RsShapeType.RsMeshShape)
                             {
@@ -1598,18 +1596,10 @@ namespace raisimUnity
             {
                 foreach (var collider in obj.GetComponentsInChildren<Collider>())
                     collider.enabled = _showVisualBody;
+                
                 foreach (var renderer in obj.GetComponentsInChildren<Renderer>())
                 {
                     renderer.enabled = _showVisualBody;
-                    // Color temp = renderer.material.color;
-                    // if (_showContactForces || _showContactPoints || _showBodyFrames)
-                    // {                        
-                    //     renderer.material.color = new Color(temp.r, temp.g, temp.b, 0.8f);
-                    // }
-                    // else
-                    // {
-                    //     renderer.material.color = new Color(temp.r, temp.g, temp.b, 1.0f);
-                    // }
                 }
             }
 
@@ -1618,34 +1608,24 @@ namespace raisimUnity
             {
                 foreach (var col in obj.GetComponentsInChildren<Collider>())
                     col.enabled = _showCollisionBody;
+                
                 foreach (var ren in obj.GetComponentsInChildren<Renderer>())
                 {
                     ren.enabled = _showCollisionBody;
-                    // Color temp = ren.material.color;
-                    // if (_showContactForces || _showContactPoints || _showBodyFrames)
-                    // {
-                    //     Material mat = ren.material;
-                    //     mat.color = new Color(temp.r, temp.g, temp.b, 0.5f);
-                    // }
-                    // else
-                    // {
-                    //     Material mat = ren.material;
-                    //     mat.color = new Color(temp.r, temp.g, temp.b, 1.0f);
-                    // }
                 }
             }
-
-            // // Contact points
-            // foreach (Transform contact in _contactPointsRoot.transform)
-            // {
-            //     contact.gameObject.GetComponent<Renderer>().enabled = _showContactPoints;
-            // }
-            //
-            // // Contact forces
-            // foreach (Transform contact in _contactForcesRoot.transform)
-            // {
-            //     contact.gameObject.GetComponentInChildren<Renderer>().enabled = _showContactForces;
-            // }
+            
+            // Articulated System Collision body
+            foreach (var obj in GameObject.FindGameObjectsWithTag(VisualTag.ArticulatedSystemCollision))
+            {
+                foreach (var col in obj.GetComponentsInChildren<Collider>())
+                    col.enabled = _showCollisionBody || _showVisualBody;
+                
+                foreach (var ren in obj.GetComponentsInChildren<Renderer>())
+                {
+                    ren.enabled = _showCollisionBody;
+                }
+            }
             
             // Body frames
             foreach (var obj in GameObject.FindGameObjectsWithTag(VisualTag.Frame))

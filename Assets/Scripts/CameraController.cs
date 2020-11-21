@@ -29,12 +29,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using raisimUnity;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Camera))]
 public class CameraController : MonoBehaviour
@@ -103,7 +105,6 @@ public class CameraController : MonoBehaviour
     private Vector3 currentPos;
 
     // UI
-    private int _visibleUI = 0;
     private Shader _standardShader;
 
     // object to follow
@@ -159,7 +160,6 @@ public class CameraController : MonoBehaviour
         _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
         
         // Set target frame rate (optional)
-        Application.targetFrameRate = frameRate;
         _relativePositionB = new Vector3(1.0f,1.0f,-1.0f);
 
         // Prepare textures and initial values
@@ -275,26 +275,6 @@ public class CameraController : MonoBehaviour
             transform.Translate(move);
         }
 
-        if (Input.GetKeyUp(KeyCode.F1))
-        {
-            _visibleUI++;
-            _sidebar.GetComponent<Canvas>().enabled = false;
-            _helpUI.GetComponent<Canvas>().enabled = false;
-            switch (_visibleUI)
-            {
-                case 0:
-                    UIController prevUi = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
-                    prevUi.gameObject.GetComponent<Canvas>().enabled = true;
-                    break;
-                case 1:
-                    HelpUIController newUI = GameObject.Find("_CanvasHelpUI").GetComponent<HelpUIController>();
-                    newUI.gameObject.GetComponent<Canvas>().enabled = true;
-                    break;
-                case 2:
-                    _visibleUI = -1;
-                    break;
-            }
-        }
         var view = cam.ScreenToViewportPoint(Input.mousePosition);
         if (view == _cursorPosition)
         {
@@ -314,7 +294,6 @@ public class CameraController : MonoBehaviour
         }
         else
         {
-            _visibleUI = 0;
             UIController prevUi = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
             prevUi.gameObject.GetComponent<Canvas>().enabled = true;
         }
@@ -323,36 +302,18 @@ public class CameraController : MonoBehaviour
         {
             // Only do this if mouse pointer is not on the GUI
             
-            // // Select object by left click
-            // if (Input.GetMouseButtonDown(0))
-            // {
-            //     Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            //     RaycastHit hit;
-            //     if (Physics.Raycast(ray, out hit))
-            //     {
-            //         if (_selected != null)
-            //         {
-            //             // Change shader back for previously selected object
-            //             foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
-            //             {
-            //                 ren.material.shader = Shader.Find(_defaultShader);
-            //             }
-            //         }
-            //     
-            //         // Set selected object
-            //         _selected = hit.transform.parent.gameObject;
-            //         
-            //         // Focus camera on selected object + save relative position of object w.r.t camera
-            //         transform.rotation = Quaternion.LookRotation(_selected.transform.position - transform.position);
-            //         _relativePositionB = Quaternion.Inverse(transform.rotation) * (_selected.transform.position - transform.position);
-            //
-            //         // Change shader for selected object
-            //         foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
-            //         {
-            //             ren.material.shader = Shader.Find(_defaultShader);
-            //         }
-            //     }
-            // }
+            // Select object by left click
+            if (Input.GetMouseButtonDown(0))
+            {
+                Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;
+                if (Physics.Raycast(ray, out hit))
+                {
+                    // Set selected object
+                    _selected = hit.transform.parent.gameObject;
+                    _toFollow = "";
+                }
+            }
 
             // Change camera orientation by right drag 
             if (Input.GetMouseButtonDown(1))
@@ -456,6 +417,7 @@ public class CameraController : MonoBehaviour
     
     public void StartRecording(string videoName="")
     {
+        Application.targetFrameRate = 60;
         // Kill thread if it's still alive
         if (_saverThread != null && (threadIsProcessing || _saverThread.IsAlive)) {
             threadIsProcessing = false;
@@ -504,6 +466,7 @@ public class CameraController : MonoBehaviour
         terminateThreadWhenDone = true;
         if(_saverThread != null && _saverThread.IsAlive) _saverThread.Join();
         _frameQueue.Clear();
+        Application.targetFrameRate = 150;
     }
 
     private int FFMPEGTest()

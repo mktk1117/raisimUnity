@@ -307,7 +307,6 @@ namespace raisimUnity
             
             LookAtDropdown.ClearOptions ();
             LookAtDropdown.AddOptions(_lookAtOptions);
-
             LookAtDropdown.onValueChanged.AddListener(delegate {
                 ChangeLookAt(LookAtDropdown);
                 DynamicGI.UpdateEnvironment();
