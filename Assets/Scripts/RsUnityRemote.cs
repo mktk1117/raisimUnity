@@ -1139,7 +1139,7 @@ namespace raisimUnity
                     );
                     
                     // set material by rgb 
-                    localObject.transform.GetChild(1).gameObject.GetComponentInChildren<Renderer>().material.SetColor(_colorString, new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
+                    localObject.GetComponentInChildren<Renderer>().material.SetColor(_colorString, new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
                     
                     switch (objectType)
                     {

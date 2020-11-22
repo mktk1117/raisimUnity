@@ -417,6 +417,9 @@ public class CameraController : MonoBehaviour
     
     public void StartRecording(string videoName="")
     {
+
+        if (FFMPEGTest() == -1) return;
+        
         Application.targetFrameRate = 60;
         // Kill thread if it's still alive
         if (_saverThread != null && (threadIsProcessing || _saverThread.IsAlive)) {
@@ -474,8 +477,9 @@ public class CameraController : MonoBehaviour
         // to check ffmpeg works 
         using (var ffmpegProc = new Process())
         {
-            if (Application.platform == RuntimePlatform.LinuxEditor ||
-                Application.platform == RuntimePlatform.LinuxPlayer)
+            if ((Application.platform == RuntimePlatform.LinuxEditor ||
+                Application.platform == RuntimePlatform.LinuxPlayer) &&
+                GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
             {
                 // Linux
                 ffmpegProc.StartInfo.FileName = "/bin/sh";
