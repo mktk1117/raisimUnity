@@ -276,13 +276,7 @@ namespace raisimUnity
                             {
                                 if (_initialization)
                                 {
-                                    // If server side has been changed, initialize objects clear objects first
-                                    foreach (Transform objT in _objectsRoot.transform)
-                                        Destroy(objT.gameObject);
-                                    
-                                    foreach (Transform objT in _visualsRoot.transform)
-                                        Destroy(objT.gameObject);
-                                    
+                                    ClearScene();
                                     // Read XML string
                                     // ReadXmlString();
                                     if (ReadAndCheckServer(ClientMessageType.RequestInitializeObjects) != ServerMessageType.Initialization)
@@ -292,10 +286,10 @@ namespace raisimUnity
                                     _numInitializedObjects = 0;
                                     _numInitializedVisuals = 0;
                                     _initialization = false;
-                                    // _loadingModalView.Show(true);
-                                    // _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
-                                    // _loadingModalView.SetMessage("Loading resources...");
-                                    // _loadingModalView.SetProgress((float) 0 / _numWorldObjects);
+                                    _loadingModalView.Show(true);
+                                    _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
+                                    _loadingModalView.SetMessage("Loading resources...");
+                                    _loadingModalView.SetProgress((float) 0 / _numWorldObjects);
                                 }
                                 
                                 if (_numInitializedObjects < _numWorldObjects)
@@ -303,7 +297,7 @@ namespace raisimUnity
                                     // Initialize objects from data
                                     // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                     PartiallyInitializeObjects();
-                                    // _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);   
+                                    _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);   
 
                                     if (_numInitializedObjects == _numWorldObjects)
                                     {
@@ -330,7 +324,7 @@ namespace raisimUnity
                                         // Initialize visuals from data
                                         // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                         PartiallyInitializeVisuals();
-                                        // _loadingModalView.SetProgress((float) _numInitializedVisuals / _numWorldVisuals);   
+                                        _loadingModalView.SetProgress((float) _numInitializedVisuals / _numWorldVisuals);   
                                     }
                                     
                                     if (_numInitializedVisuals == _numWorldVisuals)
@@ -347,7 +341,7 @@ namespace raisimUnity
                                         _clientStatus = ClientStatus.UpdateObjectPosition;
                                         _initialization = true;
                                         ShowOrHideObjects();
-                                        // _loadingModalView.Show(false);
+                                        _loadingModalView.Show(false);
                                         GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructLookAt();
                                     }
                                 }
@@ -944,7 +938,7 @@ namespace raisimUnity
                 }
 
                 _numInitializedObjects++;
-                if (Time.deltaTime > 0.1f)
+                if (Time.deltaTime > 0.03/60)
                     // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
                     break;
             }
