@@ -232,14 +232,10 @@ namespace raisimUnity
         void Update()
         {
             // Broken connection: clear
-            if( !_tcpHelper.CheckConnection() )
-            {
+            if(!_tcpHelper.CheckConnection())
                 CloseConnection();
-            }
             else
-            {
                 _errorModalView.Show(false);
-            }
      
             // Data available: handle communication
             if (_tcpHelper.DataAvailable)
@@ -286,10 +282,6 @@ namespace raisimUnity
                                     _numInitializedObjects = 0;
                                     _numInitializedVisuals = 0;
                                     _initialization = false;
-                                    _loadingModalView.Show(true);
-                                    _loadingModalView.SetTitle("Initializing RaiSim Objects Starts");
-                                    _loadingModalView.SetMessage("Loading resources...");
-                                    _loadingModalView.SetProgress((float) 0 / _numWorldObjects);
                                 }
                                 
                                 if (_numInitializedObjects < _numWorldObjects)
@@ -297,6 +289,9 @@ namespace raisimUnity
                                     // Initialize objects from data
                                     // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
                                     PartiallyInitializeObjects();
+                                    _loadingModalView.Show(true);
+                                    _loadingModalView.SetTitle("Initializing RaiSim Objects");
+                                    _loadingModalView.SetMessage("Loading meshes...");
                                     _loadingModalView.SetProgress((float) _numInitializedObjects / _numWorldObjects);   
 
                                     if (_numInitializedObjects == _numWorldObjects)
@@ -316,25 +311,22 @@ namespace raisimUnity
                                 
                                 if (_numInitializedObjects == _numWorldObjects)
                                 {
-                                    if(_numInitializedVisuals == 0)
-                                        _numWorldVisuals = _tcpHelper.GetDataUlong();
-                                    
-                                    if (_numInitializedVisuals < _numWorldVisuals)
-                                    {
-                                        // Initialize visuals from data
-                                        // If the function call time is > 0.1 sec, rest of objects are initialized in next Update iteration
-                                        PartiallyInitializeVisuals();
-                                        _loadingModalView.SetProgress((float) _numInitializedVisuals / _numWorldVisuals);   
-                                    }
+                                    _numWorldVisuals = _tcpHelper.GetDataUlong();
+                                    PartiallyInitializeVisuals();
+                                    _loadingModalView.Show(true);
+                                    _loadingModalView.SetTitle("Initializing Visual Objects");
+                                    _loadingModalView.SetMessage("Loading meshes...");
+                                    _loadingModalView.SetProgress((float) _numInitializedVisuals / _numWorldVisuals);   
                                     
                                     if (_numInitializedVisuals == _numWorldVisuals)
                                     {
                                         // Disable other cameras than main camera
                                         foreach (var cam in Camera.allCameras)
-                                        {
-                                            if (cam == Camera.main) continue;
-                                            cam.enabled = false;
-                                        }
+                                            if (cam != Camera.main) 
+                                                cam.enabled = false;
+                                        
+                                        _tcpHelper.GetDataServerMessageType(); /// not used here
+                                        
                                         UpdateObjectsPosition();
 
                                         // Initialization done 
@@ -369,23 +361,13 @@ namespace raisimUnity
                                     UpdateContacts();
                                 
                                 if (!_showContactForces)
-                                {
                                     for (ulong i = 0; i < _nCreatedArrowsForContactForce; i++)
-                                    {
-                                        var forceMaker = _contactForcesRoot.transform.Find("contactForce" + i.ToString()).gameObject;
-                                        forceMaker.SetActive(false);
-                                    }
-                                }
+                                        _contactForcesRoot.transform.Find("contactForce" + i.ToString()).gameObject.SetActive(false);
             
                                 if (!_showContactPoints)
-                                {
                                     for (ulong i = 0; i < _nCreatedArrowsForContactForce; i++)
-                                    {
-                                        var forceMaker = _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject;
-                                        forceMaker.SetActive(false);
-                                    }
-                                }
-                                
+                                        _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject.SetActive(false);
+                                        
                                 // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
                                 // Else clientStatus is updated to UpdateVisualPosition
                             } catch (Exception e)
@@ -938,9 +920,9 @@ namespace raisimUnity
                 }
 
                 _numInitializedObjects++;
-                if (Time.deltaTime > 0.03/60)
-                    // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
-                    break;
+                // if (Time.deltaTime > 0.03)
+                //     // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
+                //     break;
             }
         }
 
@@ -1039,17 +1021,15 @@ namespace raisimUnity
                 }
 
                 _numInitializedVisuals++;
-                if (Time.deltaTime > 0.03f)
-                    // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
-                    break;
+                // if (Time.deltaTime > 0.03f)
+                //     // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
+                //     break;
             }
         }
         
         private bool UpdateObjectsPosition() 
         {
-            ulong configurationNumber = _tcpHelper.GetDataUlong();
-
-            if (configurationNumber != _objectConfiguration)
+            if (_tcpHelper.GetDataUlong() != _objectConfiguration)
             {
                 _numInitializedObjects = 0;
                 _clientStatus = ClientStatus.InitializingObjects;
@@ -1621,24 +1601,6 @@ namespace raisimUnity
                 foreach (var renderer in obj.GetComponentsInChildren<Renderer>())
                 {
                     renderer.enabled = _showBodyFrames;
-                }
-            }
-        }
-
-        public void requestConnection ()
-        {
-            if(_clientStatus == ClientStatus.Idle)
-            {
-                try
-                {
-                    if(_tcpHelper.TryConnection())
-                    {
-                        _clientStatus = ClientStatus.InitializingObjects;
-                    }
-                }
-                catch
-                {
-
                 }
             }
         }
