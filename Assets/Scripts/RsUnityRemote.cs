@@ -920,9 +920,9 @@ namespace raisimUnity
                 }
 
                 _numInitializedObjects++;
-                // if (Time.deltaTime > 0.03)
-                //     // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
-                //     break;
+                if (Time.deltaTime > 0.3)
+                    // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
+                    break;
             }
         }
 
@@ -1021,9 +1021,9 @@ namespace raisimUnity
                 }
 
                 _numInitializedVisuals++;
-                // if (Time.deltaTime > 0.03f)
-                //     // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
-                //     break;
+                if (Time.deltaTime > 0.3f)
+                    // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
+                    break;
             }
         }
         
