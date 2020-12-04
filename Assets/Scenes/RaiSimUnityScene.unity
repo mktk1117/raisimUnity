@@ -377,7 +377,6 @@ MonoBehaviour:
   m_Script: {fileID: 481210471}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Entries: []
 --- !u!4 &68463769
 Transform:
   m_ObjectHideFlags: 19
@@ -4277,7 +4276,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2127537128}
   m_HandleRect: {fileID: 2127537127}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -9352,7 +9351,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 648470226}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.70390177
+  m_Size: 0.5441339
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
