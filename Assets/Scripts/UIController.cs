@@ -33,6 +33,8 @@ using UnityEngine.UIElements;
 using Button = UnityEngine.UI.Button;
 using Slider = UnityEngine.UI.Slider;
 using Toggle = UnityEngine.UI.Toggle;
+using UnityEngine.Rendering.HighDefinition;
+using UnityEngine.Rendering;
 
 namespace raisimUnity
 {
@@ -294,6 +296,31 @@ namespace raisimUnity
             {
                 _camera.Follow(_lookAtOptions[dropdown.value]);
             }
+        }
+
+        public void ConstructSkyHDRP()
+        {
+            var SkyDropdown = GameObject.Find("_SkyDropDown").GetComponent<Dropdown>();
+            _lookAtOptions = new List<string>();
+            foreach (var option in _remote._skyNames)
+            {
+                _lookAtOptions.Add(option); // Or whatever you want for a label
+            }
+
+            SkyDropdown.ClearOptions();
+            SkyDropdown.AddOptions(_lookAtOptions);
+            SkyDropdown.onValueChanged.AddListener(delegate {
+                ChangeSky(SkyDropdown);
+                DynamicGI.UpdateEnvironment();
+            });
+        }
+
+        private void ChangeSky(Dropdown dropdown)
+        {            
+            GameObject volume = GameObject.Find("Sky");
+            HDRISky sky;
+            volume.GetComponent<Volume>().profile.TryGet<HDRISky>(out sky);
+            sky.hdriSky.value = _remote._skyCubemaps[dropdown.value];
         }
 
         public void ConstructLookAt()

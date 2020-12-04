@@ -33,6 +33,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
+using System.Collections.Specialized;
 
 namespace raisimUnity
 {
@@ -117,6 +118,8 @@ namespace raisimUnity
         private float _contactForceMarkerScale = 1;
         private float _bodyFrameMarkerScale = 1;
         private GameObject _arrowMesh;
+        public List<string> _skyNames;
+        public List<Cubemap> _skyCubemaps;
 
         // Root objects
         private GameObject _objectsRoot;
@@ -187,6 +190,23 @@ namespace raisimUnity
             {
                 _defaultShader = "HDRP/Lit";
                 _colorString = "_BaseColor";
+                _skyNames.Add("sky1"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky1/sky1"));
+                _skyNames.Add("sky2"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky2/sky2"));
+                _skyNames.Add("sky3"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky3/sky3"));
+                _skyNames.Add("sky4"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky4/sky4"));
+                _skyNames.Add("sky5"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky5/sky5"));
+                _skyNames.Add("sky6"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky6/sky6"));
+                _skyNames.Add("sky7"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky7/sky7"));
+                _skyNames.Add("sky8"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky8/sky8"));
+                _skyNames.Add("sky9"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky9/sky9"));
+                _skyNames.Add("sky10"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky10/sky10"));
+
+                //Cubemap sky1 = Resources.Load<Cubemap>("AllSkyFree/sky2/sky2");
+                //GameObject volume = GameObject.Find("Sky");
+                //HDRISky sky;
+                //volume.GetComponent<Volume>().profile.TryGet<HDRISky>(out sky);
+                //sky.hdriSky.value = sky1;
+                //GameObject.Find("Sky").GetComponent<HDRISky>().hdriSky.value = sky1;
             }
             else
             {
@@ -335,7 +355,11 @@ namespace raisimUnity
                                         ShowOrHideObjects();
                                         _loadingModalView.Show(false);
                                         GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructLookAt();
-                                    }
+                                        if (GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
+                                        {
+                                            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructSkyHDRP();
+                                        }
+                                     }
                                 }
                             } catch (Exception e)
                             {
