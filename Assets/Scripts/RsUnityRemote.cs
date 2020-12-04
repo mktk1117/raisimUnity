@@ -483,6 +483,7 @@ namespace raisimUnity
             // _objectController.ClearCache();
             
             _tcpHelper.Flush();
+            Resources.UnloadUnusedAssets();
         }
         
         private void PartiallyInitializeObjects()
