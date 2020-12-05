@@ -60,7 +60,9 @@ This is stand-alone application thus you don't have to mind about dependencies o
 
 ### Development
 
-The following sections introduces how to develop RaiSimUnity on Linux (Ubuntu 18.04 LTS). For more details, see [Installation wiki](https://github.com/leggedrobotics/RaiSimUnity/wiki/installation) and [Developing wiki](https://github.com/leggedrobotics/RaiSimUnity/wiki/developing).
+The following sections introduces how to develop RaiSimUnity
+
+-[Developing wiki](https://github.com/leggedrobotics/RaiSimUnity/wiki/developing).
 
 ## FAQ
 
