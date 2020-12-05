@@ -254,6 +254,9 @@ namespace raisimUnity
                     RefereshScrollResources();
                 });
             }
+
+            if (GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
+                ConstructSkyHDRP();
         }
 
         private void TryConnect()

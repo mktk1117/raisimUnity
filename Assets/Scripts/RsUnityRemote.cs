@@ -353,10 +353,6 @@ namespace raisimUnity
                                         ShowOrHideObjects();
                                         _loadingModalView.Show(false);
                                         GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructLookAt();
-                                        if (GraphicsSettings.renderPipelineAsset is HDRenderPipelineAsset)
-                                        {
-                                            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructSkyHDRP();
-                                        }
                                      }
                                 }
                             } catch (Exception e)
