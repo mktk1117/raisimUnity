@@ -377,7 +377,6 @@ MonoBehaviour:
   m_Script: {fileID: 481210471}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Entries: []
 --- !u!4 &68463769
 Transform:
   m_ObjectHideFlags: 19
@@ -10885,8 +10884,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 648470227}
   m_HandleRect: {fileID: 648470226}
   m_Direction: 2
-  m_Value: 0.9999996
-  m_Size: 0.81426764
+  m_Value: 1.0000002
+  m_Size: 0.6875761
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -11202,8 +11201,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 770}
+  m_AnchoredPosition: {x: 0, y: 0.000061035156}
+  m_SizeDelta: {x: 0, y: 950}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1911465442
 MonoBehaviour:
