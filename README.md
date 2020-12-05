@@ -30,33 +30,8 @@ The followings are optional dependencies
 
 ### Using RaiSimUnity
 
-For beginners, we recommend downloading a compiled app image from the [raisimlib repo](https://github.com/raisimTech/raisimLib/tree/master/raisimUnity).
-This is stand-alone application thus you don't have to mind about dependencies or compiling. (only ffmpeg is required for recording a screen capture video.)
+Please follow instructions in this [link](https://raisim.com/sections/RaisimUnity.html)
 
-### Quickstart with RaiSim
-
-1. Add the following line in your RaiSim simulation code: see [Example code](https://github.com/raisimTech/raisimexample)
-    ```cpp
-      /// launch raisim server
-      raisim::RaisimServer server(&world);
-      server.launchServer();
-    
-      while(1) {
-        raisim::MSLEEP(2);
-        server.integrateWorldThreadSafe();
-      }
-    
-      server.killServer();
-    ```
-2. Run your RaiSim simulation. 
-3. Run RaiSimUnity application.
-![](Images/step1.png)
-4. Add your resource directory that contains your mesh, material etc.
-![](Images/step2.png)
-5. Tap *Connect* button after specify TCP address and port.
-![](Images/step3.png)
-6. You can change background by *Background* dropdown menu in run time.
-![](Images/step4.png)
 
 ### Development
 
