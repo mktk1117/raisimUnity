@@ -150,6 +150,10 @@ namespace raisimUnity
                 
                 var sliderBodyFrames = GameObject.Find(_SliderBodyFramesName).GetComponent<Slider>();
                 sliderBodyFrames.onValueChanged.AddListener((value) => { _remote.BodyFrameMarkerScale = value; });
+
+                var sliderLight = GameObject.Find("_LightSlider").GetComponent<Slider>();
+                sliderLight.onValueChanged.AddListener((value) => { GameObject.Find("Directional Light").transform.localRotation = Quaternion.Euler(50, value, 0); });
+
                 var toggleBodyFrames = GameObject.Find(_ToggleBodyFramesName).GetComponent<Toggle>();
                 toggleBodyFrames.onValueChanged.AddListener((isSelected) =>
                 {
@@ -321,6 +325,17 @@ namespace raisimUnity
             HDRISky sky;
             volume.GetComponent<Volume>().profile.TryGet<HDRISky>(out sky);
             sky.hdriSky.value = _remote._skyCubemaps[dropdown.value];
+
+            if(dropdown.value == 7)
+            {
+                _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().clearColorMode = HDAdditionalCameraData.ClearColorMode.Color;
+                _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().backgroundColorHDR = Color.white;
+                _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().volumeLayerMask = 0;
+            } else
+            {
+                _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().clearColorMode = HDAdditionalCameraData.ClearColorMode.Sky;
+            }
+            
         }
 
         public void ConstructLookAt()

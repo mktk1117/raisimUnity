@@ -197,6 +197,7 @@ namespace raisimUnity
                 _skyNames.Add("sky5"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky5/sky5"));
                 _skyNames.Add("sky6"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky6/sky6"));
                 _skyNames.Add("sky7"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky7/sky7"));
+                _skyNames.Add("sky8"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky8/sky8"));
 
                 //Cubemap sky1 = Resources.Load<Cubemap>("AllSkyFree/sky2/sky2");
                 //GameObject volume = GameObject.Find("Sky");
