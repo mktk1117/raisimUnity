@@ -83,7 +83,8 @@ namespace raisimUnity
         private Thread _autoConnectThread;
 
         private List<string> _lookAtOptions;
-        
+        private List<string> _SkyOptions;
+
         private void Start()
         {
             _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
@@ -305,14 +306,14 @@ namespace raisimUnity
         public void ConstructSkyHDRP()
         {
             var SkyDropdown = GameObject.Find("_SkyDropDown").GetComponent<Dropdown>();
-            _lookAtOptions = new List<string>();
+            _SkyOptions = new List<string>();
             foreach (var option in _remote._skyNames)
             {
-                _lookAtOptions.Add(option); // Or whatever you want for a label
+                _SkyOptions.Add(option); // Or whatever you want for a label
             }
 
             SkyDropdown.ClearOptions();
-            SkyDropdown.AddOptions(_lookAtOptions);
+            SkyDropdown.AddOptions(_SkyOptions);
             SkyDropdown.onValueChanged.AddListener(delegate {
                 ChangeSky(SkyDropdown);
                 DynamicGI.UpdateEnvironment();
@@ -330,7 +331,6 @@ namespace raisimUnity
             {
                 _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().clearColorMode = HDAdditionalCameraData.ClearColorMode.Color;
                 _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().backgroundColorHDR = Color.white;
-                _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().volumeLayerMask = 0;
             } else
             {
                 _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().clearColorMode = HDAdditionalCameraData.ClearColorMode.Sky;
