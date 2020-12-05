@@ -14,9 +14,10 @@ The following Unity plugins are already included in the project.
 The following Unity packages are imported by Unity Package Manager automatically: see [Packages/manifest.json](Packages/manifest.json) 
 - [UnityMeshImporter](https://github.com/eastskykang/UnityMeshImporter)
 
-- minizip ```sudo apt install minizip```
-
 - vulkan. check https://linuxconfig.org/install-and-test-vulkan-on-linux
+
+The follwoing package must be installed if you are using Linux
+- minizip ```sudo apt install minizip```
 
 The followings are optional dependencies
 - [ffmpeg](https://www.ffmpeg.org/) for video recording
@@ -29,12 +30,12 @@ The followings are optional dependencies
 
 ### Using RaiSimUnity
 
-For beginners, we recommend downloading a compiled app image from the [raisimlib repo](https://github.com/raisimTech/raisimlib). 
+For beginners, we recommend downloading a compiled app image from the [raisimlib repo](https://github.com/raisimTech/raisimLib/tree/master/raisimUnity).
 This is stand-alone application thus you don't have to mind about dependencies or compiling. (only ffmpeg is required for recording a screen capture video.)
 
 ### Quickstart with RaiSim
 
-1. Add the following line in your RaiSim simulation code: see [Example code](https://github.com/leggedrobotics/raisimUnity/tree/master/Examples/src)
+1. Add the following line in your RaiSim simulation code: see [Example code](https://github.com/raisimTech/raisimexample)
     ```cpp
       /// launch raisim server
       raisim::RaisimServer server(&world);
