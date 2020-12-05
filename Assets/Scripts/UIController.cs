@@ -331,9 +331,11 @@ namespace raisimUnity
             {
                 _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().clearColorMode = HDAdditionalCameraData.ClearColorMode.Color;
                 _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().backgroundColorHDR = Color.white;
+                _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().volumeLayerMask = 0;
             } else
             {
                 _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().clearColorMode = HDAdditionalCameraData.ClearColorMode.Sky;
+                _camera.GetComponent<Camera>().GetComponent<HDAdditionalCameraData>().volumeLayerMask = 1;
             }
             
         }
