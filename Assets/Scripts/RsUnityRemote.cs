@@ -34,6 +34,7 @@ using UnityEngine.Rendering.HighDefinition;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 using System.Collections.Specialized;
+using CColor = System.Drawing.Color;
 
 namespace raisimUnity
 {
@@ -518,8 +519,6 @@ namespace raisimUnity
                     _objName.Add(name, objectIndex.ToString() + "/0/0");    
                 }
                 
-                Appearances? appearances = _xmlReader.FindApperancesFromObjectName(name);
-                
                 if (objectType == RsObejctType.RsArticulatedSystemObject)
                 {
                     string urdfDirPathInServer = _tcpHelper.GetDataString(); 
@@ -632,35 +631,25 @@ namespace raisimUnity
                 else if (objectType == RsObejctType.RsHalfSpaceObject)
                 {
                     // get material
+                    String appearance = _tcpHelper.GetDataString();
                     Material material;
-                    if (appearances != null && !string.IsNullOrEmpty(appearances.As<Appearances>().materialName))
-                    {
-                        material = Resources.Load<Material>(appearances.As<Appearances>().materialName);
-                    }
-                    else
-                    {
-                        // default material
-                        material = _planeMaterial;
-                    }
+                    material = _planeMaterial;
                     
                     float height = _tcpHelper.GetDataFloat();
                     var objFrame = _objectController.CreateRootObject(_objectsRoot, objectIndex.ToString());
                     var plane = _objectController.CreateHalfSpace(objFrame, height);
                     plane.GetComponentInChildren<Renderer>().material = _whiteMaterial;
                     plane.tag = VisualTag.Collision;
-
-                    // default visual object
-                    if (appearances == null || !appearances.As<Appearances>().subAppearances.Any())
-                    {
-                        var planeVis = _objectController.CreateHalfSpace(objFrame, height);
-                        planeVis.GetComponentInChildren<Renderer>().material = material;
-                        planeVis.GetComponentInChildren<Renderer>().material.mainTextureScale = new Vector2(15, 15);
-                        planeVis.tag = VisualTag.Visual;
-                        planeVis.name = "halfspace_viz";
-                    }
+                    var planeVis = _objectController.CreateHalfSpace(objFrame, height);
+                    planeVis.GetComponentInChildren<Renderer>().material = material;
+                    planeVis.GetComponentInChildren<Renderer>().material.mainTextureScale = new Vector2(15, 15);
+                    planeVis.tag = VisualTag.Visual;
+                    planeVis.name = "halfspace_viz";
                 }
                 else if (objectType == RsObejctType.RsHeightMapObject)
                 {
+                    String appearance = _tcpHelper.GetDataString();
+
                     // center
                     float centerX = _tcpHelper.GetDataFloat();
                     float centerY = _tcpHelper.GetDataFloat();
@@ -686,131 +675,98 @@ namespace raisimUnity
                     var objFrame = _objectController.CreateRootObject(_objectsRoot, objectIndex.ToString());
                     var terrain = _objectController.CreateTerrain(objFrame, numSampleX, sizeX, centerX, numSampleY, sizeY, centerY, heights, true);
                     terrain.tag = VisualTag.Both;
-                    terrain.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                    terrain.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
+                    if (appearance == "")
+                    {
+                        terrain.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
+                    }
+                    else
+                    {
+                        terrain.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+                        gameObject.GetComponentInChildren<MeshRenderer>().material.SetColor(_colorString, StringToColor(appearance.ToLower()));
+                    }
                 }
                 else if (objectType == RsObejctType.RsCompoundObject)
                 {
-                    // default material
-                    Material material;
-                    switch (_numInitializedObjects % 3)
+                    String appearance = _tcpHelper.GetDataString();
+                    ulong numberOfVisObjects = _tcpHelper.GetDataUlong();
+
+                    for (ulong j = 0; j < numberOfVisObjects; j++)
                     {
-                        case 0:
-                            material = _defaultMaterialR;
-                            break;
-                        case 1:
-                            material = _defaultMaterialG;
-                            break;
-                        case 2:
-                            material = _defaultMaterialB;
-                            break;
-                        default:
-                            material = _defaultMaterialR;
-                            break;
-                    }
-                    
-                    for (int visItem = 0; visItem < 2; visItem++)
-                    {
-                        if (visItem == 1)
-                            material = _whiteMaterial;
+                        RsObejctType obType = _tcpHelper.GetDataRsObejctType();
+                        string subName = objectIndex.ToString() + "/" + j.ToString();
+                        var objFrame = _objectController.CreateRootObject(_objectsRoot, subName);
+                        string tag = VisualTag.Both;
+                        GameObject gameObject = null;
                         
-                        ulong numberOfVisObjects = _tcpHelper.GetDataUlong();
-
-                        for (ulong j = 0; j < numberOfVisObjects; j++)
+                        switch (obType)
                         {
-                            RsObejctType obType = _tcpHelper.GetDataRsObejctType();
-                            string subName = objectIndex.ToString() + "/" + visItem.ToString() + "/" + j.ToString();
-                            var objFrame = _objectController.CreateRootObject(_objectsRoot, subName);
-
-                            string tag = "";
-                            if (visItem == 0)
-                                tag = VisualTag.Visual;
-                            else if (visItem == 1)
-                                tag = VisualTag.Collision;
-                            
-                            switch (obType)
+                            case RsObejctType.RsBoxObject:
                             {
-                                case RsObejctType.RsBoxObject:
-                                {
-                                    double x = _tcpHelper.GetDataDouble();
-                                    double y = _tcpHelper.GetDataDouble();
-                                    double z = _tcpHelper.GetDataDouble();
-                                    var box = _objectController.CreateBox(objFrame, (float) x, (float) y, (float) z);
-                                    box.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                    box.GetComponentInChildren<MeshRenderer>().material = material;
-                                    box.tag = tag;
-                                }
-                                    break;
-                                case RsObejctType.RsCapsuleObject:
-                                {
-                                    double radius = _tcpHelper.GetDataDouble();
-                                    double height = _tcpHelper.GetDataDouble();
-
-                                    var capsule = _objectController.CreateCapsule(objFrame, (float)radius, (float)height);
-                                    capsule.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                    capsule.GetComponentInChildren<MeshRenderer>().material = material;
-                                    capsule.tag = tag;
-                                }
-                                    break;
-                                case RsObejctType.RsConeObject:
-                                {
-                                    // TODO URDF does not support cone shape
-                                }
-                                    break;
-                                case RsObejctType.RsCylinderObject:
-                                {
-                                    double radius = _tcpHelper.GetDataDouble();
-                                    double height = _tcpHelper.GetDataDouble();
-                                    var cylinder = _objectController.CreateCylinder(objFrame, (float)radius, (float)height);
-                                    cylinder.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                    cylinder.GetComponentInChildren<MeshRenderer>().material = material;
-                                    cylinder.tag = tag;
-                                }
-                                    break;
-                                case RsObejctType.RsSphereObject:
-                                {
-                                    double radius = _tcpHelper.GetDataDouble();
-                                    var sphere = _objectController.CreateSphere(objFrame, (float)radius);
-                                    sphere.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                    sphere.GetComponentInChildren<MeshRenderer>().material = material;
-                                    sphere.tag = tag;
-                                }
-                                    break;
-                                
+                                double x = _tcpHelper.GetDataDouble();
+                                double y = _tcpHelper.GetDataDouble();
+                                double z = _tcpHelper.GetDataDouble();
+                                gameObject = _objectController.CreateBox(objFrame, (float) x, (float) y, (float) z);
                             }
+                                break;
+                            case RsObejctType.RsCapsuleObject:
+                            {
+                                double radius = _tcpHelper.GetDataDouble();
+                                double height = _tcpHelper.GetDataDouble();
+
+                                gameObject = _objectController.CreateCapsule(objFrame, (float)radius, (float)height);
+                            }
+                                break;
+                            case RsObejctType.RsConeObject:
+                            {
+                                // TODO URDF does not support cone shape
+                            }
+                                break;
+                            case RsObejctType.RsCylinderObject:
+                            {
+                                double radius = _tcpHelper.GetDataDouble();
+                                double height = _tcpHelper.GetDataDouble();
+                                gameObject = _objectController.CreateCylinder(objFrame, (float)radius, (float)height);
+                            }
+                                break;
+                            case RsObejctType.RsSphereObject:
+                                gameObject = _objectController.CreateSphere(objFrame, (float)_tcpHelper.GetDataDouble());
+                                break;
+                            
                         }
+                        
+                        gameObject.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+                        if (appearance == "")
+                        {
+                            switch (_numInitializedObjects % 3)
+                            {
+                                case 0:
+                                    gameObject.GetComponentInChildren<MeshRenderer>().material = _defaultMaterialR;
+                                    break;
+                                case 1:
+                                    gameObject.GetComponentInChildren<MeshRenderer>().material = _defaultMaterialG;
+                                    break;
+                                case 2:
+                                    gameObject.GetComponentInChildren<MeshRenderer>().material = _defaultMaterialB;
+                                    break;
+                                default:
+                                    gameObject.GetComponentInChildren<MeshRenderer>().material = _defaultMaterialR;
+                                    break;
+                            }    
+                        }
+                        else
+                        {
+                            gameObject.GetComponentInChildren<MeshRenderer>().material.SetColor(_colorString, StringToColor(appearance.ToLower()));
+                        }
+                        gameObject.tag = tag;
                     }
                 }
                 else
                 {
                     // single body object
-                    
+                    String appearance = _tcpHelper.GetDataString();
+
                     // create base frame of object
                     var objFrame = _objectController.CreateRootObject(_objectsRoot, objectIndex.ToString());
-                    
-                    // get material
-                    Material material;
-                    if (appearances != null && !string.IsNullOrEmpty(appearances.As<Appearances>().materialName))
-                        material = Resources.Load<Material>(appearances.As<Appearances>().materialName);
-                    else
-                    {
-                        // default material
-                        switch (_numInitializedObjects % 3)
-                        {
-                            case 0:
-                                material = _defaultMaterialR;
-                                break;
-                            case 1:
-                                material = _defaultMaterialG;
-                                break;
-                            case 2:
-                                material = _defaultMaterialB;
-                                break;
-                            default:
-                                material = _defaultMaterialR;
-                                break;
-                        }
-                    }
                     
                     // collision body 
                     GameObject collisionObject = null;
@@ -821,7 +777,6 @@ namespace raisimUnity
                         {
                             float radius = _tcpHelper.GetDataFloat();
                             collisionObject =  _objectController.CreateSphere(objFrame, radius);
-                            collisionObject.tag = VisualTag.Collision;
                         }
                             break;
 
@@ -831,7 +786,6 @@ namespace raisimUnity
                             float sy = _tcpHelper.GetDataFloat();
                             float sz = _tcpHelper.GetDataFloat();
                             collisionObject = _objectController.CreateBox(objFrame, sx, sy, sz);
-                            collisionObject.tag = VisualTag.Collision;
                         }
                             break;
                         case RsObejctType.RsCylinderObject:
@@ -839,7 +793,6 @@ namespace raisimUnity
                             float radius = _tcpHelper.GetDataFloat();
                             float height = _tcpHelper.GetDataFloat();
                             collisionObject = _objectController.CreateCylinder(objFrame, radius, height);
-                            collisionObject.tag = VisualTag.Collision;
                         }
                             break;
                         case RsObejctType.RsCapsuleObject:
@@ -847,7 +800,6 @@ namespace raisimUnity
                             float radius = _tcpHelper.GetDataFloat();
                             float height = _tcpHelper.GetDataFloat();
                             collisionObject = _objectController.CreateCapsule(objFrame, radius, height);
-                            collisionObject.tag = VisualTag.Collision;
                         }
                             break;
                         case RsObejctType.RsMeshObject:
@@ -862,79 +814,34 @@ namespace raisimUnity
                             
                             collisionObject = _objectController.CreateMesh(objFrame, meshFilePathInResourceDir, 
                                 scale, scale, scale);
-                            collisionObject.tag = VisualTag.Collision;
                         }
                             break;
                     }
-                    collisionObject.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                    collisionObject.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
-                    
-                    // visual body
-                    GameObject visualObject = null;
-
-                    if (appearances != null)
+                    collisionObject.tag = VisualTag.Both;
+           
+                    // default material
+                    if (appearance == "")
                     {
-                        foreach (var subapp in appearances.As<Appearances>().subAppearances)
+                        switch (_numInitializedObjects % 3)
                         {
-                            // subapp material 
-                            if(!String.IsNullOrEmpty(subapp.materialName))
-                                material = Resources.Load<Material>(subapp.materialName);
-                            
-                            switch (subapp.shapes)
-                            {
-                                case AppearanceShapes.Sphere:
-                                {
-                                    float radius = subapp.dimension.x;
-                                    visualObject =  _objectController.CreateSphere(objFrame, radius);
-                                    visualObject.GetComponentInChildren<Renderer>().material = material;
-                                    visualObject.tag = VisualTag.Visual;
-                                }
-                                    break;
-                                case AppearanceShapes.Box:
-                                {
-                                    visualObject = _objectController.CreateBox(objFrame, subapp.dimension.x, subapp.dimension.y, subapp.dimension.z);
-                                    visualObject.GetComponentInChildren<Renderer>().material = material;
-                                    visualObject.tag = VisualTag.Visual;
-                                }
-                                    break;
-                                case AppearanceShapes.Cylinder:
-                                {
-                                    visualObject = _objectController.CreateCylinder(objFrame, subapp.dimension.x, subapp.dimension.y);
-                                    visualObject.GetComponentInChildren<Renderer>().material = material;
-                                    visualObject.tag = VisualTag.Visual;
-                                }
-                                    break;
-                                case AppearanceShapes.Capsule:
-                                {
-                                    visualObject = _objectController.CreateCapsule(objFrame, subapp.dimension.x, subapp.dimension.y);
-                                    visualObject.GetComponentInChildren<Renderer>().material = material;
-                                    visualObject.tag = VisualTag.Visual;
-                                }
-                                    break;
-                                case AppearanceShapes.Mesh:
-                                {
-                                    string meshFileName = Path.GetFileName(subapp.fileName);       
-                                    string meshFileExtension = Path.GetExtension(subapp.fileName);
-                                    string meshFilePathInResourceDir = _loader.RetrieveMeshPath(Path.GetDirectoryName(subapp.fileName), meshFileName);
-                            
-                                    visualObject = _objectController.CreateMesh(objFrame, meshFilePathInResourceDir, 
-                                        subapp.dimension.x, subapp.dimension.y, subapp.dimension.z);
-                                    visualObject.GetComponentInChildren<Renderer>().material = material;
-                                    visualObject.tag = VisualTag.Visual;
-                                }
-                                    break;
-                                default:
-                                    new RsuException("Not Implemented Appearance Shape");
-                                    break;
-                            }
+                            case 0:
+                                collisionObject.GetComponentInChildren<MeshRenderer>().material = _defaultMaterialR;
+                                break;
+                            case 1:
+                                collisionObject.GetComponentInChildren<MeshRenderer>().material = _defaultMaterialG;
+                                break;
+                            case 2:
+                                collisionObject.GetComponentInChildren<MeshRenderer>().material = _defaultMaterialB;
+                                break;
+                            default:
+                                collisionObject.GetComponentInChildren<MeshRenderer>().material = _defaultMaterialR;
+                                break;
                         }
                     }
                     else
                     {
-                        // default visual object (same shape with collision)
-                        visualObject = GameObject.Instantiate(collisionObject, objFrame.transform);
-                        visualObject.GetComponentInChildren<Renderer>().material = material;
-                        visualObject.tag = VisualTag.Visual;
+                        collisionObject.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+                        collisionObject.GetComponentInChildren<MeshRenderer>().material.SetColor(_colorString, StringToColor(appearance.ToLower()));
                     }
                 }
 
@@ -1712,6 +1619,29 @@ namespace raisimUnity
         public ResourceLoader ResourceLoader
         {
             get { return _loader; }
+        }
+
+        private Color StringToColor(String mat)
+        {
+            List<String> list = mat.Split(',').ToList();
+            Color color;
+            if (list.Count == 1)
+            {
+                if (ColorUtility.TryParseHtmlString(mat, out color))
+                    return color;
+            } 
+            
+            if (list.Count == 3)
+            {
+                return new Color(Int32.Parse(list[0]), Int32.Parse(list[1]), Int32.Parse(list[2]));
+            } 
+            
+            if (list.Count == 4)
+            {
+                return new Color(Int32.Parse(list[0]), Int32.Parse(list[1]), Int32.Parse(list[2]), Int32.Parse(list[3]));
+            }
+
+            return Color.gray;
         }
     }
 }
