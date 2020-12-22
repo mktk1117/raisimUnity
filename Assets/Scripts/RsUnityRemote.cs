@@ -532,6 +532,12 @@ namespace raisimUnity
                         for (ulong j = 0; j < numberOfVisObjects; j++)
                         {
                             RsShapeType shapeType = _tcpHelper.GetDataRsShapeType();
+                            String material = _tcpHelper.GetDataString();
+                            double r = _tcpHelper.GetDataDouble();
+                            double g = _tcpHelper.GetDataDouble();
+                            double b = _tcpHelper.GetDataDouble();
+                            double a = _tcpHelper.GetDataDouble();
+                            Color color = new Color((float)r, (float)g, (float)b, (float)a);
                                 
                             ulong group = _tcpHelper.GetDataUlong();
 
@@ -580,24 +586,22 @@ namespace raisimUnity
                                     double visSize = _tcpHelper.GetDataDouble();
                                     visParam.Add(visSize);
                                 }
+
+                                GameObject obj = null;
+                                
                                 switch (shapeType)
                                 {
                                     case RsShapeType.RsBoxShape:
                                     {
                                         if (visParam.Count != 3) new RsuException("Box Mesh error");
-                                        var box = _objectController.CreateBox(objFrame, (float) visParam[0], (float) visParam[1], (float) visParam[2]);
-                                        box.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                        box.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
-                                        box.tag = tag;
+                                        obj = _objectController.CreateBox(objFrame, (float) visParam[0], (float) visParam[1], (float) visParam[2]);
+
                                     }
                                         break;
                                     case RsShapeType.RsCapsuleShape:
                                     {
                                         if (visParam.Count != 2) new RsuException("Capsule Mesh error");
-                                        var capsule = _objectController.CreateCapsule(objFrame, (float)visParam[0], (float)visParam[1]);
-                                        capsule.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                        capsule.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
-                                        capsule.tag = tag;
+                                        obj = _objectController.CreateCapsule(objFrame, (float)visParam[0], (float)visParam[1]);
                                     }
                                         break;
                                     case RsShapeType.RsConeShape:
@@ -608,21 +612,27 @@ namespace raisimUnity
                                     case RsShapeType.RsCylinderShape:
                                     {
                                         if (visParam.Count != 2) new RsuException("Cylinder Mesh error");
-                                        var cylinder = _objectController.CreateCylinder(objFrame, (float)visParam[0], (float)visParam[1]);
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                        cylinder.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
-                                        cylinder.tag = tag;
+                                        obj = _objectController.CreateCylinder(objFrame, (float)visParam[0], (float)visParam[1]);
                                     }
                                         break;
                                     case RsShapeType.RsSphereShape:
                                     {
                                         if (visParam.Count != 1) new RsuException("Sphere Mesh error");
-                                        var sphere = _objectController.CreateSphere(objFrame, (float)visParam[0]);
-                                        sphere.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                        sphere.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
-                                        sphere.tag = tag;
+                                        obj = _objectController.CreateSphere(objFrame, (float)visParam[0]);
                                     }
                                         break;
+                                }
+                                
+                                obj.tag = tag;
+
+                                if (material != "")
+                                {
+                                    obj.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
+                                    obj.GetComponentInChildren<MeshRenderer>().material.SetColor(_colorString, color);
+                                }
+                                else
+                                {
+                                    obj.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
                                 }
                             }
                         }
