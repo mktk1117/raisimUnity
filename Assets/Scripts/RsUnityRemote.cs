@@ -403,6 +403,7 @@ namespace raisimUnity
                     // _errorModalView.Show(true);
                     // _errorModalView.SetMessage(e.Message);
                     // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState(e.Message);
+                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setError(e.Message);
 
                     _clientStatus = ClientStatus.Idle;
                     // Close connection

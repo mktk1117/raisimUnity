@@ -47,6 +47,8 @@ namespace raisimUnity
         
         static GUIStyle _style = null;
         private string _state = null;
+        private string _errorMsg = "";
+        private int _errorCount = 0;
         
         // UI element names
         // Buttons
@@ -387,7 +389,24 @@ namespace raisimUnity
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
-            
+
+            if (_errorMsg != "")
+            {
+                GUILayout.BeginArea(new Rect(Screen.width*0.4f - _state.Length*_style.fontSize/2, _style.fontSize*2, _state.Length*_style.fontSize/2, _style.fontSize*2), _style);  
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(_errorMsg);
+                GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
+                GUILayout.EndArea();
+                _errorCount++;
+            }
+
+            if (_errorCount > 500)
+            {
+                _errorCount = 0;
+                _errorMsg = "";
+            }
 
             // Show recording status
             var recordButton = GameObject.Find(_ButtonRecordName);
@@ -449,6 +468,11 @@ namespace raisimUnity
         public void setState(string state)
         {
             _state = state;
+        }
+        
+        public void setError(string error)
+        {
+            _state = error;
         }
     }
 }
