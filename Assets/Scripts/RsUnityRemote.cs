@@ -151,7 +151,7 @@ namespace raisimUnity
         private Material _defaultMaterialB;
 
         // Modal view
-        private ErrorViewController _errorModalView;
+        // private ErrorViewController _errorModalView;
         private LoadingViewController _loadingModalView;
         
         // Configuration number (should be always matched with server)
@@ -169,9 +169,16 @@ namespace raisimUnity
         private ulong _nCreatedArrowsForExternalTorque = 0;
         private ulong _nCreatedPolyLineBox = 0;
 
+        private String _errorLogFile = "";
+
         void Start()
         {
             // object roots
+            if (!File.Exists(Application.dataPath+"/../Logs"))
+                Directory.CreateDirectory(Application.dataPath+"/../Logs");
+            _errorLogFile = Path.Combine(Application.dataPath+"/../Logs/", "raisim_error_log.txt");
+
+            File.WriteAllText(_errorLogFile, "error logs \n");
             _objectsRoot = new GameObject("_RsObjects");
             _objectsRoot.transform.SetParent(transform);
             _objectCache = new GameObject("_ObjectCache");
@@ -229,7 +236,7 @@ namespace raisimUnity
             _defaultMaterialB = Resources.Load<Material>("Plastic3");
             
             // ui controller 
-            _errorModalView = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
+            // _errorModalView = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
             _loadingModalView = GameObject.Find("_CanvasModalViewLoading").GetComponent<LoadingViewController>();
             _clientStatus = ClientStatus.Idle;
         }
@@ -253,8 +260,6 @@ namespace raisimUnity
             // Broken connection: clear
             if(!_tcpHelper.CheckConnection())
                 CloseConnection();
-            else
-                _errorModalView.Show(false);
      
             // Data available: handle communication
             if (_tcpHelper.DataAvailable)
@@ -403,7 +408,12 @@ namespace raisimUnity
                     // _errorModalView.Show(true);
                     // _errorModalView.SetMessage(e.Message);
                     // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState(e.Message);
-                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setError(e.Message);
+                    using (System.IO.StreamWriter file =
+                        new System.IO.StreamWriter(_errorLogFile, true))
+                    {
+                        file.WriteLine(e.ToString()+"\n \n");
+                    }
+                    GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setError(e.ToString());
 
                     _clientStatus = ClientStatus.Idle;
                     // Close connection

@@ -87,6 +87,9 @@ namespace raisimUnity
         private List<string> _lookAtOptions;
         private List<string> _SkyOptions;
 
+        private TextBox _errorTextBox;
+        private TextBox _statusTextBox;
+        
         private void Start()
         {
             _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
@@ -368,37 +371,50 @@ namespace raisimUnity
             // Set style once
             if (_style == null)
             {
-                // _style = GUI.skin.textField;
-                _style = GUI.skin.textArea;
-                _style.normal.textColor = Color.white;
-                _style.alignment = TextAnchor.LowerRight;
+                {
+                    // _style = GUI.skin.textField;
+                    _style = GUI.skin.textArea;
+                    _style.normal.textColor = Color.white;
+                    _style.alignment = TextAnchor.LowerRight;
 
-                // scale font size with DPI
-                if (Screen.dpi < 100)
-                    _style.fontSize = 14;
-                else if (Screen.dpi > 300)
-                    _style.fontSize = 34;
-                else
-                    _style.fontSize = Mathf.RoundToInt(14 + (Screen.dpi - 100.0f) * 0.1f);
+                    // scale font size with DPI
+                    if (Screen.dpi < 100)
+                        _style.fontSize = 14;
+                    else if (Screen.dpi > 300)
+                        _style.fontSize = 34;
+                    else
+                        _style.fontSize = Mathf.RoundToInt(14 + (Screen.dpi - 100.0f) * 0.1f);
+                    
+                    _statusTextBox = new TextBox(_style);
+                }
+
+                {
+                    // error text box
+                    // Set style once
+                    GUIStyle errorStyle;
+                
+                    // _style = GUI.skin.textField;
+                    errorStyle = GUI.skin.textArea;
+                    errorStyle.normal.textColor = Color.white;
+                    errorStyle.alignment = TextAnchor.LowerRight;
+
+                    // scale font size with DPI
+                    if (Screen.dpi < 100)
+                        errorStyle.fontSize = 14;
+                    else if (Screen.dpi > 300)
+                        errorStyle.fontSize = 34;
+                    else
+                        errorStyle.fontSize = Mathf.RoundToInt(14 + (Screen.dpi - 100.0f) * 0.1f);
+
+                    _errorTextBox = new TextBox(errorStyle);
+                }
             }
 
-            GUILayout.BeginArea(new Rect(Screen.width - _state.Length*_style.fontSize/2, Screen.height-_style.fontSize*2, _state.Length*_style.fontSize/2, _style.fontSize*2), _style);  
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            GUILayout.Label(_state);
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
-            GUILayout.EndArea();
+            _statusTextBox.displayMessage(_state, Screen.width - _state.Length*_style.fontSize/2, Screen.height-_style.fontSize*2);
 
             if (_errorMsg != "")
             {
-                GUILayout.BeginArea(new Rect(Screen.width*0.4f - _state.Length*_style.fontSize/2, _style.fontSize*2, _state.Length*_style.fontSize/2, _style.fontSize*2), _style);  
-                GUILayout.BeginHorizontal();
-                GUILayout.FlexibleSpace();
-                GUILayout.Label(_errorMsg);
-                GUILayout.FlexibleSpace();
-                GUILayout.EndHorizontal();
-                GUILayout.EndArea();
+                _errorTextBox.displayMessage(_errorMsg, (int)(Screen.width*0.1f), _style.fontSize*2);
                 _errorCount++;
             }
 
@@ -472,7 +488,7 @@ namespace raisimUnity
         
         public void setError(string error)
         {
-            _state = error;
+            _errorMsg = error;
         }
     }
 }

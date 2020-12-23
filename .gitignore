@@ -65,6 +65,7 @@ crashlytics-build.properties
 # Log and screenshots
 *.mp4
 Screenshot/
+Logs/*
 
 
 /.project
