@@ -322,14 +322,6 @@ public class CameraController : MonoBehaviour
                 _anchorRot = transform.rotation;
 
                 // deselect object by right click
-                if (_selected != null)
-                {
-                    foreach (var ren in _selected.GetComponentsInChildren<Renderer>())
-                    {
-                        ren.material.shader = _standardShader;
-                    }
-                }
-            
                 _selected = null;
                 _toFollow = "";
             }

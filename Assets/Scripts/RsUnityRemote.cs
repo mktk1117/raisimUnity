@@ -136,6 +136,9 @@ namespace raisimUnity
         private ulong _numWorldObjects; 
         private ulong _numInitializedVisuals;
         private ulong _numWorldVisuals;
+        private ulong _numWorldVisualsSingleBodies;
+        private ulong _numWorldVisualsArticulatedSystems;
+
         private ulong _wireN=0;
         
         // Shaders
@@ -149,6 +152,7 @@ namespace raisimUnity
         private Material _defaultMaterialR;
         private Material _defaultMaterialG;
         private Material _defaultMaterialB;
+        private Material _transparentMaterial;
 
         // Modal view
         // private ErrorViewController _errorModalView;
@@ -234,6 +238,7 @@ namespace raisimUnity
             _defaultMaterialR = Resources.Load<Material>("Plastic1");
             _defaultMaterialG = Resources.Load<Material>("Plastic2");
             _defaultMaterialB = Resources.Load<Material>("Plastic3");
+            _transparentMaterial = Resources.Load<Material>("transparent");
             
             // ui controller 
             // _errorModalView = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
@@ -335,7 +340,12 @@ namespace raisimUnity
                                 
                                 if (_numInitializedObjects == _numWorldObjects)
                                 {
-                                    _numWorldVisuals = _tcpHelper.GetDataUlong();
+                                    if (_numInitializedVisuals == 0)
+                                    {
+                                        _numWorldVisuals = _tcpHelper.GetDataUlong();
+                                        _numWorldVisualsSingleBodies = _tcpHelper.GetDataUlong();
+                                        _numWorldVisualsArticulatedSystems = _tcpHelper.GetDataUlong();    
+                                    }
                                     PartiallyInitializeVisuals();
                                     _loadingModalView.Show(true);
                                     _loadingModalView.SetTitle("Initializing Visual Objects");
@@ -515,6 +525,101 @@ namespace raisimUnity
             _tcpHelper.Flush();
             Resources.UnloadUnusedAssets();
         }
+
+        private void addArticulatedSystem(string objectIndex)
+        {
+            string urdfDirPathInServer = _tcpHelper.GetDataString(); 
+
+            // visItem = 0 (visuals)
+            // visItem = 1 (collisions)
+            for (int visItem = 0; visItem < 2; visItem++)
+            {
+                ulong numberOfVisObjects = _tcpHelper.GetDataUlong();
+
+                for (ulong j = 0; j < numberOfVisObjects; j++)
+                {
+                    RsShapeType shapeType = _tcpHelper.GetDataRsShapeType();
+                    String material = _tcpHelper.GetDataString();
+                    Color color = getColor();
+                    ulong group = _tcpHelper.GetDataUlong();
+
+                    string subName = objectIndex + "/" + visItem + "/" + j;
+                    var objFrame = _objectController.CreateRootObject(_objectsRoot, subName);
+
+                    string tag = "";
+                    if (visItem == 0)
+                        tag = VisualTag.Visual;
+                    else if (visItem == 1)
+                        tag = VisualTag.ArticulatedSystemCollision;
+
+                    GameObject obj = null;
+
+                    if (shapeType == RsShapeType.RsMeshShape)
+                    {
+                        string meshFile = _tcpHelper.GetDataString();
+                        string meshFileExtension = Path.GetExtension(meshFile);
+
+                        double sx = _tcpHelper.GetDataDouble();
+                        double sy = _tcpHelper.GetDataDouble();
+                        double sz = _tcpHelper.GetDataDouble();
+
+                        string meshFilePathInResourceDir = _loader.RetrieveMeshPath(urdfDirPathInServer, meshFile);
+                        if (meshFilePathInResourceDir == null)
+                        {
+                            new RsuException("Cannot find mesh from resource directories = " + meshFile);
+                        }
+
+                        try
+                        {
+                            obj = _objectController.CreateMesh(objFrame, meshFilePathInResourceDir, (float)sx, (float)sy, (float)sz);
+                            obj.tag = tag;
+                        }
+                        catch (Exception e)
+                        {
+                            new RsuException("Cannot create mesh: " + e.Message);
+                        }
+                    }
+                    else
+                    {
+                        ulong size = _tcpHelper.GetDataUlong();
+                            
+                        var visParam = new List<double>();
+                        for (ulong k = 0; k < size; k++)
+                        {
+                            double visSize = _tcpHelper.GetDataDouble();
+                            visParam.Add(visSize);
+                        }
+                      
+                        switch (shapeType)
+                        {
+                            case RsShapeType.RsBoxShape:
+                                if (visParam.Count != 3) new RsuException("Box Mesh error");
+                                obj = _objectController.CreateBox(objFrame, (float) visParam[0], (float) visParam[1], (float) visParam[2]);
+                                break;
+                            case RsShapeType.RsCapsuleShape:
+                                if (visParam.Count != 2) new RsuException("Capsule Mesh error");
+                                obj = _objectController.CreateCapsule(objFrame, (float)visParam[0], (float)visParam[1]);
+                                break;
+                            case RsShapeType.RsConeShape:
+                                // TODO URDF does not support cone shape
+                                break;
+                            case RsShapeType.RsCylinderShape:
+                                if (visParam.Count != 2) new RsuException("Cylinder Mesh error");
+                                obj = _objectController.CreateCylinder(objFrame, (float)visParam[0], (float)visParam[1]);
+                                break;
+                            case RsShapeType.RsSphereShape:
+                                if (visParam.Count != 1) new RsuException("Sphere Mesh error");
+                                obj = _objectController.CreateSphere(objFrame, (float)visParam[0]);
+                                break;
+                        }
+                        
+                        obj.tag = tag;
+                        if(color.a != 0)
+                            setColor(obj, color);
+                    }
+                }
+            }
+        }
         
         private void PartiallyInitializeObjects()
         {
@@ -532,122 +637,7 @@ namespace raisimUnity
                 
                 if (objectType == RsObejctType.RsArticulatedSystemObject)
                 {
-                    string urdfDirPathInServer = _tcpHelper.GetDataString(); 
-
-                    // visItem = 0 (visuals)
-                    // visItem = 1 (collisions)
-                    for (int visItem = 0; visItem < 2; visItem++)
-                    {
-                        ulong numberOfVisObjects = _tcpHelper.GetDataUlong();
-
-                        for (ulong j = 0; j < numberOfVisObjects; j++)
-                        {
-                            RsShapeType shapeType = _tcpHelper.GetDataRsShapeType();
-                            String material = _tcpHelper.GetDataString();
-                            double r = _tcpHelper.GetDataDouble();
-                            double g = _tcpHelper.GetDataDouble();
-                            double b = _tcpHelper.GetDataDouble();
-                            double a = _tcpHelper.GetDataDouble();
-                            Color color = new Color((float)r, (float)g, (float)b, (float)a);
-                                
-                            ulong group = _tcpHelper.GetDataUlong();
-
-                            string subName = objectIndex.ToString() + "/" + visItem.ToString() + "/" + j.ToString();
-                            var objFrame = _objectController.CreateRootObject(_objectsRoot, subName);
-
-                            string tag = "";
-                            if (visItem == 0)
-                                tag = VisualTag.Visual;
-                            else if (visItem == 1)
-                                tag = VisualTag.ArticulatedSystemCollision;
-
-                            if (shapeType == RsShapeType.RsMeshShape)
-                            {
-                                string meshFile = _tcpHelper.GetDataString();
-                                string meshFileExtension = Path.GetExtension(meshFile);
-
-                                double sx = _tcpHelper.GetDataDouble();
-                                double sy = _tcpHelper.GetDataDouble();
-                                double sz = _tcpHelper.GetDataDouble();
-
-                                string meshFilePathInResourceDir = _loader.RetrieveMeshPath(urdfDirPathInServer, meshFile);
-                                if (meshFilePathInResourceDir == null)
-                                {
-                                    new RsuException("Cannot find mesh from resource directories = " + meshFile);
-                                }
-
-                                try
-                                {
-                                    var mesh = _objectController.CreateMesh(objFrame, meshFilePathInResourceDir, (float)sx, (float)sy, (float)sz);
-                                    mesh.tag = tag;
-                                }
-                                catch (Exception e)
-                                {
-                                    new RsuException("Cannot create mesh: " + e.Message);
-                                    throw;
-                                }
-                            }
-                            else
-                            {
-                                ulong size = _tcpHelper.GetDataUlong();
-                                    
-                                var visParam = new List<double>();
-                                for (ulong k = 0; k < size; k++)
-                                {
-                                    double visSize = _tcpHelper.GetDataDouble();
-                                    visParam.Add(visSize);
-                                }
-
-                                GameObject obj = null;
-                                
-                                switch (shapeType)
-                                {
-                                    case RsShapeType.RsBoxShape:
-                                    {
-                                        if (visParam.Count != 3) new RsuException("Box Mesh error");
-                                        obj = _objectController.CreateBox(objFrame, (float) visParam[0], (float) visParam[1], (float) visParam[2]);
-
-                                    }
-                                        break;
-                                    case RsShapeType.RsCapsuleShape:
-                                    {
-                                        if (visParam.Count != 2) new RsuException("Capsule Mesh error");
-                                        obj = _objectController.CreateCapsule(objFrame, (float)visParam[0], (float)visParam[1]);
-                                    }
-                                        break;
-                                    case RsShapeType.RsConeShape:
-                                    {
-                                        // TODO URDF does not support cone shape
-                                    }
-                                        break;
-                                    case RsShapeType.RsCylinderShape:
-                                    {
-                                        if (visParam.Count != 2) new RsuException("Cylinder Mesh error");
-                                        obj = _objectController.CreateCylinder(objFrame, (float)visParam[0], (float)visParam[1]);
-                                    }
-                                        break;
-                                    case RsShapeType.RsSphereShape:
-                                    {
-                                        if (visParam.Count != 1) new RsuException("Sphere Mesh error");
-                                        obj = _objectController.CreateSphere(objFrame, (float)visParam[0]);
-                                    }
-                                        break;
-                                }
-                                
-                                obj.tag = tag;
-
-                                if (material != "")
-                                {
-                                    obj.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                                    obj.GetComponentInChildren<MeshRenderer>().material.SetColor(_colorString, color);
-                                }
-                                else
-                                {
-                                    obj.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
-                                }
-                            }
-                        }
-                    }
+                    addArticulatedSystem(objectIndex.ToString());
                 }
                 else if (objectType == RsObejctType.RsHalfSpaceObject)
                 {
@@ -702,8 +692,7 @@ namespace raisimUnity
                     }
                     else
                     {
-                        terrain.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                        gameObject.GetComponentInChildren<MeshRenderer>().material.SetColor(_colorString, StringToColor(appearance.ToLower()));
+                        setColorFromString(gameObject, appearance);
                     }
                 }
                 else if (objectType == RsObejctType.RsCompoundObject)
@@ -776,7 +765,7 @@ namespace raisimUnity
                         }
                         else
                         {
-                            gameObject.GetComponentInChildren<MeshRenderer>().material.SetColor(_colorString, StringToColor(appearance.ToLower()));
+                            setColorFromString(gameObject, appearance);
                         }
                         gameObject.tag = tag;
                     }
@@ -861,8 +850,7 @@ namespace raisimUnity
                     }
                     else
                     {
-                        collisionObject.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                        collisionObject.GetComponentInChildren<MeshRenderer>().material.SetColor(_colorString, StringToColor(appearance.ToLower()));
+                        setColorFromString(collisionObject, appearance);
                     }
                 }
 
@@ -877,101 +865,140 @@ namespace raisimUnity
         {
             while (_numInitializedVisuals < _numWorldVisuals)
             {
-                RsVisualType objectType = _tcpHelper.GetDataRsVisualType();
+                if (_numInitializedVisuals < _numWorldVisualsSingleBodies)
+                {
+                    RsVisualType objectType = _tcpHelper.GetDataRsVisualType();
                 
-                // get name and find corresponding appearance from XML
-                string objectName = _tcpHelper.GetDataString();
-                
-                float colorR = _tcpHelper.GetDataFloat();
-                float colorG = _tcpHelper.GetDataFloat();
-                float colorB = _tcpHelper.GetDataFloat();
-                float colorA = _tcpHelper.GetDataFloat();
-                string materialName = _tcpHelper.GetDataString();
-                bool glow = _tcpHelper.GetDataBool();
-                bool shadow = _tcpHelper.GetDataBool();
+                    // get name and find corresponding appearance from XML
+                    string objectName = _tcpHelper.GetDataString();
+                    Color color = getColor();
+                    string materialName = _tcpHelper.GetDataString();
+                    bool glow = _tcpHelper.GetDataBool();
+                    bool shadow = _tcpHelper.GetDataBool();
 
-                var visFrame = _objectController.CreateRootObject(_visualsRoot, objectName);
-                
-                GameObject visual = null;
+                    var visFrame = _objectController.CreateRootObject(_visualsRoot, objectName);
                     
-                switch (objectType)
-                {
-                    case RsVisualType.RsVisualSphere :
+                    GameObject visual = null;
+                        
+                    switch (objectType)
                     {
-                        float radius = _tcpHelper.GetDataFloat();
-                        visual =  _objectController.CreateSphere(visFrame, radius);
-                        visual.tag = VisualTag.Visual;
+                        case RsVisualType.RsVisualSphere :
+                        {
+                            float radius = _tcpHelper.GetDataFloat();
+                            visual =  _objectController.CreateSphere(visFrame, radius);
+                            visual.tag = VisualTag.Visual;
+                        }
+                            break;
+                        case RsVisualType.RsVisualBox:
+                        {
+                            float sx = _tcpHelper.GetDataFloat();
+                            float sy = _tcpHelper.GetDataFloat();
+                            float sz = _tcpHelper.GetDataFloat();
+                            visual = _objectController.CreateBox(visFrame, sx, sy, sz);
+                            visual.tag = VisualTag.Visual;
+                        }
+                            break;
+                        case RsVisualType.RsVisualCylinder:
+                        {
+                            float radius = _tcpHelper.GetDataFloat();
+                            float height = _tcpHelper.GetDataFloat();
+                            visual = _objectController.CreateCylinder(visFrame, radius, height);
+                            visual.tag = VisualTag.Visual;
+                        }
+                            break;
+                        case RsVisualType.RsVisualCapsule:
+                        {
+                            float radius = _tcpHelper.GetDataFloat();
+                            float height = _tcpHelper.GetDataFloat();
+                            visual = _objectController.CreateCapsule(visFrame, radius, height);
+                            visual.tag = VisualTag.Visual;
+                        }
+                            break;
+                        case RsVisualType.RsVisualArrow:
+                        {
+                            float radius = _tcpHelper.GetDataFloat();
+                            float height = _tcpHelper.GetDataFloat();
+                            visual = _objectController.CreateArrow(visFrame, radius, height);
+                            visual.tag = VisualTag.Visual;
+                        }
+                            break;
                     }
-                        break;
-                    case RsVisualType.RsVisualBox:
+                    
+                    // set material or color
+                    if (string.IsNullOrEmpty(materialName) && visual != null)
                     {
-                        float sx = _tcpHelper.GetDataFloat();
-                        float sy = _tcpHelper.GetDataFloat();
-                        float sz = _tcpHelper.GetDataFloat();
-                        visual = _objectController.CreateBox(visFrame, sx, sy, sz);
-                        visual.tag = VisualTag.Visual;
+                        // set material by rgb 
+                        visual.GetComponentInChildren<Renderer>().material.SetColor(_colorString, color);
+                        if(glow)
+                        {
+                            visual.GetComponentInChildren<Renderer>().material.EnableKeyword("_EMISSION");
+                            visual.GetComponentInChildren<Renderer>().material.SetColor(
+                                "_EmissionColor", color);
+                        }
                     }
-                        break;
-                    case RsVisualType.RsVisualCylinder:
+                    else
                     {
-                        float radius = _tcpHelper.GetDataFloat();
-                        float height = _tcpHelper.GetDataFloat();
-                        visual = _objectController.CreateCylinder(visFrame, radius, height);
-                        visual.tag = VisualTag.Visual;
+                        // set material from
+                        Material material = Resources.Load<Material>(materialName);
+                        visual.GetComponentInChildren<Renderer>().material = material;
                     }
-                        break;
-                    case RsVisualType.RsVisualCapsule:
-                    {
-                        float radius = _tcpHelper.GetDataFloat();
-                        float height = _tcpHelper.GetDataFloat();
-                        visual = _objectController.CreateCapsule(visFrame, radius, height);
-                        visual.tag = VisualTag.Visual;
-                    }
-                        break;
-                    case RsVisualType.RsVisualArrow:
-                    {
-                        float radius = _tcpHelper.GetDataFloat();
-                        float height = _tcpHelper.GetDataFloat();
-                        visual = _objectController.CreateArrow(visFrame, radius, height);
-                        visual.tag = VisualTag.Visual;
-                    }
-                        break;
-                }
-                
-                // set material or color
-                if (string.IsNullOrEmpty(materialName) && visual != null)
-                {
-                    // set material by rgb 
-                    visual.GetComponentInChildren<Renderer>().material.SetColor(_colorString, new Color(colorR, colorG, colorB, colorA));
-                    if(glow)
-                    {
-                        visual.GetComponentInChildren<Renderer>().material.EnableKeyword("_EMISSION");
-                        visual.GetComponentInChildren<Renderer>().material.SetColor(
-                            "_EmissionColor", new Color(colorR, colorG, colorB, colorA));
-                    }
+                    
+                    // set shadow 
+                    if (shadow)
+                        visual.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.On;
+                    else
+                        visual.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
                 }
                 else
                 {
-                    // set material from
-                    Material material = Resources.Load<Material>(materialName);
-                    visual.GetComponentInChildren<Renderer>().material = material;
+                    for (ulong i = 0; i < _numWorldVisualsArticulatedSystems; i++)
+                    {
+                        string name = _tcpHelper.GetDataString();
+                        addArticulatedSystem(name+i);
+                    }
                 }
                 
-                // set shadow 
-                if (shadow)
-                {
-                    visual.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.On;
-                }
-                else
-                {
-                    visual.GetComponentInChildren<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
-                }
-
                 _numInitializedVisuals++;
                 if (Time.deltaTime > 0.3f)
                     // If initialization takes too much time, do the rest in next iteration (to prevent freezing GUI(
                     break;
             }
+        }
+
+        private void setObjectPosition(string objectName)
+        {
+            double posX = _tcpHelper.GetDataDouble();
+            double posY = _tcpHelper.GetDataDouble();
+            double posZ = _tcpHelper.GetDataDouble();
+                    
+            double quatW = _tcpHelper.GetDataDouble();
+            double quatX = _tcpHelper.GetDataDouble();
+            double quatY = _tcpHelper.GetDataDouble();
+            double quatZ = _tcpHelper.GetDataDouble();
+
+            GameObject localObject = GameObject.Find(objectName);
+
+            if (localObject != null)
+            {
+                ObjectController.SetTransform(
+                    localObject, 
+                    new Vector3((float)posX, (float)posY, (float)posZ), 
+                    new Quaternion((float)quatX, (float)quatY, (float)quatZ, (float)quatW)
+                );
+            }
+            else
+            {
+                new RsuException("Cannot find unity game object: " + objectName);
+            }
+        }
+
+        private Color getColor()
+        {
+            double colorR = _tcpHelper.GetDataDouble();
+            double colorG = _tcpHelper.GetDataDouble();
+            double colorB = _tcpHelper.GetDataDouble();
+            double colorA = _tcpHelper.GetDataDouble();
+            return new Color((float) colorR, (float) colorG, (float) colorB, (float) colorA);
         }
         
         private bool UpdateObjectsPosition() 
@@ -988,60 +1015,25 @@ namespace raisimUnity
             for (ulong i = 0; i < numObjects; i++)
             {
                 ulong localIndexSize = _tcpHelper.GetDataUlong();
-
                 for (ulong j = 0; j < localIndexSize; j++)
                 {
                     string objectName = _tcpHelper.GetDataString();
-                    
-                    double posX = _tcpHelper.GetDataDouble();
-                    double posY = _tcpHelper.GetDataDouble();
-                    double posZ = _tcpHelper.GetDataDouble();
-                    
-                    double quatW = _tcpHelper.GetDataDouble();
-                    double quatX = _tcpHelper.GetDataDouble();
-                    double quatY = _tcpHelper.GetDataDouble();
-                    double quatZ = _tcpHelper.GetDataDouble();
-
-                    GameObject localObject = GameObject.Find(objectName);
-
-                    if (localObject != null)
-                    {
-                        ObjectController.SetTransform(
-                            localObject, 
-                            new Vector3((float)posX, (float)posY, (float)posZ), 
-                            new Quaternion((float)quatX, (float)quatY, (float)quatZ, (float)quatW)
-                        );
-                    }
-                    else
-                    {
-                        new RsuException("Cannot find unity game object: " + objectName);
-                    }
+                    setObjectPosition(objectName);
                 }
             }
 
             // visual objects
-            numObjects = _tcpHelper.GetDataUlong();
+            ulong numVisObjects = _tcpHelper.GetDataUlong();
+            ulong numVisObjectsSb = _tcpHelper.GetDataUlong();
+            ulong numVisObjectsAs = _tcpHelper.GetDataUlong();
 
-            for (ulong i = 0; i < numObjects; i++)
+            for (ulong i = 0; i < numVisObjectsSb; i++)
             {
                 string visualName = _tcpHelper.GetDataString();
-                
-                double posX = _tcpHelper.GetDataDouble();
-                double posY = _tcpHelper.GetDataDouble();
-                double posZ = _tcpHelper.GetDataDouble();
-                    
-                double quatW = _tcpHelper.GetDataDouble();
-                double quatX = _tcpHelper.GetDataDouble();
-                double quatY = _tcpHelper.GetDataDouble();
-                double quatZ = _tcpHelper.GetDataDouble();
+                setObjectPosition(visualName);
                 
                 RsVisualType objectType = _tcpHelper.GetDataRsVisualType();
-
-                double colorR = _tcpHelper.GetDataDouble();
-                double colorG = _tcpHelper.GetDataDouble();
-                double colorB = _tcpHelper.GetDataDouble();
-                double colorA = _tcpHelper.GetDataDouble();
-                
+                Color color = getColor();
                 double sizeA = _tcpHelper.GetDataDouble();
                 double sizeB = _tcpHelper.GetDataDouble();
                 double sizeC = _tcpHelper.GetDataDouble();
@@ -1050,41 +1042,25 @@ namespace raisimUnity
 
                 if (localObject != null)
                 {
-                    ObjectController.SetTransform(
-                        localObject, 
-                        new Vector3((float)posX, (float)posY, (float)posZ), 
-                        new Quaternion((float)quatX, (float)quatY, (float)quatZ, (float)quatW)
-                    );
-                    
                     // set material by rgb 
-                    localObject.GetComponentInChildren<Renderer>().material.SetColor(_colorString, new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
+                    localObject.GetComponentInChildren<Renderer>().material.SetColor(_colorString, color);
                     
                     switch (objectType)
                     {
                         case RsVisualType.RsVisualSphere :
-                        {
                             localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeA, (float)sizeA);
-                        }
                             break;
                         case RsVisualType.RsVisualBox:
-                        {
                             localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeB, (float)sizeC);
-                        }
                             break;
                         case RsVisualType.RsVisualCylinder:
-                        {
                             localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeB, (float)sizeA);
-                        }
                             break;
                         case RsVisualType.RsVisualCapsule:
-                        {
                             localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeB*0.5f+(float)sizeA*0.5f, (float)sizeA);
-                        }
                             break;
                         case RsVisualType.RsVisualArrow:
-                        {
                             localObject.transform.localScale = new Vector3((float)sizeA, (float)sizeA, (float)sizeB);
-                        }
                             break;
                     }
                 }
@@ -1093,7 +1069,21 @@ namespace raisimUnity
                     new RsuException("Cannot find unity game object: " + visualName);
                 }
             }
-            
+
+            for (ulong i = 0; i < numVisObjectsAs; i++)
+            {
+                Color color = getColor();
+                ulong localIndexSize = _tcpHelper.GetDataUlong();
+                
+                for (ulong j = 0; j < localIndexSize; j++)
+                {
+                    string objectName = _tcpHelper.GetDataString();
+                    setObjectPosition(objectName);
+                    if (color.a != 0)
+                        setColor(GameObject.Find(objectName), color);
+                }
+            }
+
             // polylines objects
             numObjects = _tcpHelper.GetDataUlong();
             List<List<Vector3>> lineList = new List<List<Vector3>>();
@@ -1105,13 +1095,10 @@ namespace raisimUnity
             for (ulong i = 0; i < numObjects; i++)
             {
                 string visualName = _tcpHelper.GetDataString();
-                double colorR = _tcpHelper.GetDataDouble();
-                double colorG = _tcpHelper.GetDataDouble();
-                double colorB = _tcpHelper.GetDataDouble();
-                double colorA = _tcpHelper.GetDataDouble();
+                Color color = getColor();
                 double width = _tcpHelper.GetDataDouble();
                 widthList.Add(width);
-                colorList.Add(new Color((float)colorR, (float)colorG, (float)colorB, (float)colorA));
+                colorList.Add(color);
                 
                 var npoints = _tcpHelper.GetDataUlong();
                 if (npoints != 0)
@@ -1145,14 +1132,11 @@ namespace raisimUnity
                     Quaternion q = new Quaternion(); 
                     q.SetLookRotation(new Vector3((float)(pos1[0]-pos2[0]), (float)(pos1[1]-pos2[1]), (float)(pos1[2]-pos2[2])), new Vector3(1,0,0));
                 
-                    ObjectController.SetTransform(box,
-                        new Vector3((float)(pos1[0]+pos2[0])/2.0f, (float)(pos1[1]+pos2[1])/2.0f, (float)(pos1[2]+pos2[2])/2.0f),
-                        q);
+                    ObjectController.SetTransform(box, new Vector3((float)(pos1[0]+pos2[0])/2.0f, (float)(pos1[1]+pos2[1])/2.0f, (float)(pos1[2]+pos2[2])/2.0f), q);
 
                     double length = Math.Sqrt((pos1[0] - pos2[0]) * (pos1[0] - pos2[0]) + (pos1[1] - pos2[1]) * (pos1[1] - pos2[1]) +
                                               (pos1[2] - pos2[2]) * (pos1[2] - pos2[2]));
                     box.GetComponent<Renderer>().material.SetColor(_colorString, colorList[(int)i]);
-                    
                     box.transform.localScale = new Vector3((float)widthList[i], (float)length, (float)widthList[i]);
                 }
             }
@@ -1162,7 +1146,7 @@ namespace raisimUnity
                 var forceMaker = _contactForcesRoot.transform.Find("polylines" + i.ToString()).gameObject;
                 forceMaker.SetActive(false);
             }
-
+            
             // constraints
             _wireN = _tcpHelper.GetDataUlong();
             for (ulong i = 0; i < _wireN; i++)
@@ -1319,9 +1303,7 @@ namespace raisimUnity
             }
 
             if (receivedData == 0)
-            {
                 new RsuException("cannot connect");
-            }
 
             ServerStatus state = _tcpHelper.GetDataServerStatus();
             processServerRequest();
@@ -1478,19 +1460,13 @@ namespace raisimUnity
         public string GetSubName(string name)
         {
             if (_objName.ContainsKey(name))
-            {
                 return _objName[name];
-            } 
             
             if (_objName.ContainsKey(name+"/0"))
-            {
                 return _objName[name+"/0"];
-            }
             
             if (_objName.ContainsKey(name+"/0/0"))
-            {
                 return _objName[name+"/0/0"];
-            }
 
             return "";
         }
@@ -1513,9 +1489,7 @@ namespace raisimUnity
                     collider.enabled = _showVisualBody;
                 
                 foreach (var renderer in obj.GetComponentsInChildren<Renderer>())
-                {
                     renderer.enabled = _showVisualBody;
-                }
             }
 
             // Collision body
@@ -1525,9 +1499,7 @@ namespace raisimUnity
                     col.enabled = _showCollisionBody;
                 
                 foreach (var ren in obj.GetComponentsInChildren<Renderer>())
-                {
                     ren.enabled = _showCollisionBody;
-                }
             }
             
             // Articulated System Collision body
@@ -1537,19 +1509,13 @@ namespace raisimUnity
                     col.enabled = _showCollisionBody || _showVisualBody;
                 
                 foreach (var ren in obj.GetComponentsInChildren<Renderer>())
-                {
                     ren.enabled = _showCollisionBody;
-                }
             }
             
             // Body frames
             foreach (var obj in GameObject.FindGameObjectsWithTag(VisualTag.Frame))
-            {
                 foreach (var renderer in obj.GetComponentsInChildren<Renderer>())
-                {
                     renderer.enabled = _showBodyFrames;
-                }
-            }
         }
 
         //**************************************************************************************************************
@@ -1642,25 +1608,44 @@ namespace raisimUnity
             get { return _loader; }
         }
 
+        private void setColorFromString(GameObject gameObject, string mat)
+        {
+            Color color = StringToColor(mat.ToLower());
+            setColor(gameObject, color);
+        }
+
+        private void setColor(GameObject gameObject, Color color)
+        {
+            MeshRenderer[] children = gameObject.GetComponentsInChildren<MeshRenderer>();
+            for (int i = 0; i < children.Length; ++i)
+            {
+                if (color.a > 0.99f)
+                {
+                    children[i].material = _whiteMaterial;
+                    children[i].material.SetColor(_colorString, color);
+                }
+                else
+                {
+                    children[i].material = _transparentMaterial;
+                    children[i].material.SetColor(_colorString, color);    
+                }
+                
+            }
+        }
+        
         private Color StringToColor(String mat)
         {
             List<String> list = mat.Split(',').ToList();
             Color color;
             if (list.Count == 1)
-            {
                 if (ColorUtility.TryParseHtmlString(mat, out color))
                     return color;
-            } 
             
             if (list.Count == 3)
-            {
-                return new Color(Int32.Parse(list[0]), Int32.Parse(list[1]), Int32.Parse(list[2]));
-            } 
+                return new Color(float.Parse(list[0]), float.Parse(list[1]), float.Parse(list[2]));
             
             if (list.Count == 4)
-            {
-                return new Color(Int32.Parse(list[0]), Int32.Parse(list[1]), Int32.Parse(list[2]), Int32.Parse(list[3]));
-            }
+                return new Color(float.Parse(list[0]), float.Parse(list[1]), float.Parse(list[2]), float.Parse(list[3]));
 
             return Color.gray;
         }
