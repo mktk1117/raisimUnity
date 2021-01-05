@@ -414,10 +414,6 @@ namespace raisimUnity
                 }
                 catch (Exception e)
                 {
-                    // Modal view
-                    // _errorModalView.Show(true);
-                    // _errorModalView.SetMessage(e.Message);
-                    // GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState(e.Message);
                     using (System.IO.StreamWriter file =
                         new System.IO.StreamWriter(_errorLogFile, true))
                     {
@@ -427,7 +423,7 @@ namespace raisimUnity
 
                     _clientStatus = ClientStatus.Idle;
                     // Close connection
-                    _tcpHelper.CloseConnection();
+                    ClearScene();
                 }
             }
         }
@@ -519,11 +515,8 @@ namespace raisimUnity
             
             // clear object cache
             _objName.Clear();
-
-            // _objectController.ClearCache();
             
-            _tcpHelper.Flush();
-            Resources.UnloadUnusedAssets();
+            // Resources.UnloadUnusedAssets();
         }
 
         private void addArticulatedSystem(string objectIndex)
@@ -1042,9 +1035,9 @@ namespace raisimUnity
 
                 if (localObject != null)
                 {
-                    // set material by rgb 
-                    localObject.GetComponentInChildren<Renderer>().material.SetColor(_colorString, color);
-                    
+                    // set material by rgb
+                    setColor(localObject, color);
+
                     switch (objectType)
                     {
                         case RsVisualType.RsVisualSphere :
@@ -1629,7 +1622,6 @@ namespace raisimUnity
                     children[i].material = _transparentMaterial;
                     children[i].material.SetColor(_colorString, color);    
                 }
-                
             }
         }
         

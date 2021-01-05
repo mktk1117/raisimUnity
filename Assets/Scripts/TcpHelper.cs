@@ -152,7 +152,7 @@ namespace raisimUnity
             {
                 if( _client!=null && _client.Client!=null && _client.Client.Connected )
                 {
-                    if( _client.Client.Poll(0, SelectMode.SelectRead) )
+                    if( _client.Client.Poll(10000, SelectMode.SelectRead) )
                     {
                         if( _client.Client.Receive(_buffer, SocketFlags.Peek)==0 )
                             return false;

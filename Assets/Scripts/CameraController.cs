@@ -227,29 +227,6 @@ public class CameraController : MonoBehaviour
         frameNumber++;
     }
     
-    private static void FlipTextureVertically(Texture2D original)
-    {
-        // on some platforms texture is flipped by unity
-        
-        var originalPixels = original.GetPixels();
-
-        Color[] newPixels = new Color[originalPixels.Length];
-
-        int width = original.width;
-        int rows = original.height;
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < rows; y++)
-            {
-                newPixels[x + y * width] = originalPixels[x + (rows - y -1) * width];
-            }
-        }
-
-        original.SetPixels(newPixels);
-        original.Apply();
-    }
-
     void Update() {
         if (!string.IsNullOrEmpty(_toFollow))
         {
