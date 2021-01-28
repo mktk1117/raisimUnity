@@ -156,7 +156,6 @@ public class CameraController : MonoBehaviour
         _sidebar = GameObject.Find("_CanvasSidebar");
         _helpUI = GameObject.Find("_CanvasHelpUI");
         GameObject.Find("_CanvasSidebar").GetComponent<Canvas>().enabled = true;
-        GameObject.Find("_CanvasHelpUI").GetComponent<Canvas>().enabled = false;
         _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
         
         // Set target frame rate (optional)
@@ -267,7 +266,6 @@ public class CameraController : MonoBehaviour
         if (_cursorStaticCount > 80)
         {
             _sidebar.GetComponent<Canvas>().enabled = false;
-            _helpUI.GetComponent<Canvas>().enabled = false;
         }
         else
         {

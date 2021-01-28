@@ -166,14 +166,15 @@ namespace raisimUnity
         
         // objects reinitialize
         private bool _initialization = true;
-        
-        // visualization arrows
-        private ulong _nCreatedArrowsForContactForce = 0;
-        private ulong _nCreatedArrowsForExternalForce = 0;
-        private ulong _nCreatedArrowsForExternalTorque = 0;
-        private ulong _nCreatedPolyLineBox = 0;
 
         private String _errorLogFile = "";
+
+        // meshPoos
+        private MeshPool _contactForceMeshPool;
+        private MeshPool _contactPointMeshPool;
+        private MeshPool _externalForceMeshPool;
+        private MeshPool _externalTorqueMeshPool;
+        private MeshPool _polylineMeshPool;
 
         void Start()
         {
@@ -244,6 +245,13 @@ namespace raisimUnity
             // _errorModalView = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
             _loadingModalView = GameObject.Find("_CanvasModalViewLoading").GetComponent<LoadingViewController>();
             _clientStatus = ClientStatus.Idle;
+
+            // mesh pools
+            _contactForceMeshPool = new MeshPool("contactForce", _arrowMesh, _contactForcesRoot, VisualTag.Both, _standardShader);
+            _contactPointMeshPool = new MeshPool("contactPoint", GameObject.CreatePrimitive(PrimitiveType.Sphere), _contactPointsRoot, VisualTag.Both, _standardShader);
+            _externalForceMeshPool = new MeshPool("externalForce", _arrowMesh, _contactForcesRoot, VisualTag.Both, _standardShader);
+            _externalTorqueMeshPool = new MeshPool("externalTorque", _arrowMesh, _contactForcesRoot, VisualTag.Both, _standardShader);
+            _polylineMeshPool = new MeshPool("polyline", GameObject.CreatePrimitive(PrimitiveType.Cube), _polylineRoot, VisualTag.Both, _standardShader);
         }
 
         public void EstablishConnection(int waitTime=1000)
@@ -393,18 +401,14 @@ namespace raisimUnity
                                 
                                 if(_showContactPoints || _showContactForces)
                                     UpdateContacts();
-                                
-                                if (!_showContactForces)
-                                    for (ulong i = 0; i < _nCreatedArrowsForContactForce; i++)
-                                        _contactForcesRoot.transform.Find("contactForce" + i.ToString()).gameObject.SetActive(false);
-            
-                                if (!_showContactPoints)
-                                    for (ulong i = 0; i < _nCreatedArrowsForContactForce; i++)
-                                        _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject.SetActive(false);
-                                        
-                                // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
-                                // Else clientStatus is updated to UpdateVisualPosition
-                            } catch (Exception e)
+
+                                _contactForceMeshPool.AllSet();            
+                                _contactPointMeshPool.AllSet();
+
+                            // If configuration number for visuals doesn't match, _clientStatus is updated to ReinitializeObjectsStart  
+                            // Else clientStatus is updated to UpdateVisualPosition
+                            } 
+                            catch (Exception e)
                             {
                                 new RsuException(e, "RsUnityRemote: UpdateObjectPosition");
                             }
@@ -414,8 +418,7 @@ namespace raisimUnity
                 }
                 catch (Exception e)
                 {
-                    using (System.IO.StreamWriter file =
-                        new System.IO.StreamWriter(_errorLogFile, true))
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(_errorLogFile, true))
                     {
                         file.WriteLine(e.ToString()+"\n \n");
                     }
@@ -476,35 +479,20 @@ namespace raisimUnity
             {
                 Destroy(objT.gameObject);
             }
-            
-            // contact points
-            foreach (Transform objT in _contactPointsRoot.transform)
-            {
-                Destroy(objT.gameObject);
-            }
-            
-            // polylines
-            foreach (Transform objT in _polylineRoot.transform)
-            {
-                Destroy(objT.gameObject);
-            }
-            
-            // contact forces
-            foreach (Transform child in _contactForcesRoot.transform)
-            {
-                Destroy(child.gameObject);
-            }
-            
+
+            // mesh pools
+            _contactPointMeshPool.Clear();
+            _contactForceMeshPool.Clear();
+            _externalForceMeshPool.Clear();
+            _externalTorqueMeshPool.Clear();
+            _polylineMeshPool.Clear();
+
             // visuals
             foreach (Transform child in _visualsRoot.transform)
             {
                 Destroy(child.gameObject);
             }
 
-            _nCreatedArrowsForContactForce = 0;
-            _nCreatedArrowsForExternalForce = 0;
-            _nCreatedArrowsForExternalTorque = 0;
-            _nCreatedPolyLineBox = 0;
             
             // clear appearances
             if(_xmlReader != null)
@@ -733,8 +721,7 @@ namespace raisimUnity
                                 break;
                             case RsObejctType.RsSphereObject:
                                 gameObject = _objectController.CreateSphere(objFrame, (float)_tcpHelper.GetDataDouble());
-                                break;
-                            
+                                break;                            
                         }
                         
                         gameObject.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
@@ -925,8 +912,7 @@ namespace raisimUnity
                         if(glow)
                         {
                             visual.GetComponentInChildren<Renderer>().material.EnableKeyword("_EMISSION");
-                            visual.GetComponentInChildren<Renderer>().material.SetColor(
-                                "_EmissionColor", color);
+                            visual.GetComponentInChildren<Renderer>().material.SetColor("_EmissionColor", color);
                         }
                     }
                     else
@@ -1100,27 +1086,15 @@ namespace raisimUnity
                 for (ulong j = 0; j < npoints; j++)
                     lineList.Last().Add(new Vector3((float)_tcpHelper.GetDataDouble(), (float)_tcpHelper.GetDataDouble(), (float)_tcpHelper.GetDataDouble()));
             }
-            
-            for (ulong markerID = _nCreatedPolyLineBox; markerID < polyLineSegN; markerID++)
-            {
-                var segment = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                segment.name = "polylines" + markerID.ToString();
-                segment.tag = VisualTag.Both;
-                segment.transform.SetParent(_polylineRoot.transform, true);
-                segment.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                _nCreatedPolyLineBox = markerID+1;
-            }
 
-            ulong boxyId = 0;
             for (int i = 0; i < lineList.Count; i++)
             {
                 var line = lineList[i];
                 for (int j = 0; j < line.Count-1; j++)
                 {
-                    var box = _polylineRoot.transform.Find("polylines" + boxyId.ToString()).gameObject;
+                    var box = _polylineMeshPool.AddMesh();
                     var pos1 = line[j];
                     var pos2 = line[j + 1];
-                    boxyId++;
                     
                     Quaternion q = new Quaternion(); 
                     q.SetLookRotation(new Vector3((float)(pos1[0]-pos2[0]), (float)(pos1[1]-pos2[1]), (float)(pos1[2]-pos2[2])), new Vector3(1,0,0));
@@ -1133,13 +1107,9 @@ namespace raisimUnity
                     box.transform.localScale = new Vector3((float)widthList[i], (float)length, (float)widthList[i]);
                 }
             }
-            
-            for (ulong i = polyLineSegN; i < _nCreatedPolyLineBox; i++)
-            {
-                var forceMaker = _contactForcesRoot.transform.Find("polylines" + i.ToString()).gameObject;
-                forceMaker.SetActive(false);
-            }
-            
+
+            _polylineMeshPool.AllSet();
+
             // constraints
             _wireN = _tcpHelper.GetDataUlong();
             for (ulong i = 0; i < _wireN; i++)
@@ -1172,22 +1142,6 @@ namespace raisimUnity
             // create contact marker
             List<Tuple<Vector3, Vector3>> externalForceList = new List<Tuple<Vector3, Vector3>>();
             float forceMaxNorm = 0;
-            
-            for (ulong markerID = _nCreatedArrowsForExternalForce; markerID < ExternalForceN; markerID++)
-            {
-                var forceMaker = GameObject.Instantiate(_arrowMesh);
-
-                forceMaker.name = "externalForce" + markerID.ToString();
-                forceMaker.tag = VisualTag.Both;
-                forceMaker.transform.SetParent(_contactForcesRoot.transform, true);
-                forceMaker.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-
-                _objectController.SetContactForceMarker(
-                    forceMaker, new Vector3(0,0,0), new Vector3(1,1,1), Color.green,
-                    _contactForceMarkerScale);
-
-                _nCreatedArrowsForExternalForce = markerID+1;
-            }
 
             for (ulong i = 0; i < ExternalForceN; i++)
             {
@@ -1207,49 +1161,23 @@ namespace raisimUnity
                 forceMaxNorm = Math.Max(forceMaxNorm, force.magnitude);
             }
 
-            for (ulong i = ExternalForceN; i < _nCreatedArrowsForExternalForce; i++)
-            {
-                var forceMaker = _contactForcesRoot.transform.Find("externalForce" + i.ToString()).gameObject;
-                forceMaker.SetActive(false);
-            }
-
             for (ulong i = 0; i < ExternalForceN; i++)
             {
-                var forceMaker = _contactForcesRoot.transform.Find("externalForce" + i.ToString()).gameObject;
+                var forceMarker = _externalForceMeshPool.AddMesh();
                 var contact = externalForceList[(int) i];
                 _objectController.SetContactForceMarker(
-                    forceMaker, contact.Item1, contact.Item2 / forceMaxNorm, Color.green,
+                    forceMarker, contact.Item1, contact.Item2 / forceMaxNorm, Color.green,
                     _contactForceMarkerScale);
-                forceMaker.SetActive(true);
+                forceMarker.SetActive(true);
             }
+
+            _externalForceMeshPool.AllSet();
 
             forceMaxNorm = 0;
             // external torque
             var ExternalTorqueN = _tcpHelper.GetDataUlong();
             List<Tuple<Vector3, Vector3>> externalTorqueList = new List<Tuple<Vector3, Vector3>>();
             
-            for (ulong markerID = _nCreatedArrowsForExternalTorque; markerID < ExternalTorqueN; markerID++)
-            {
-                var forceMaker = GameObject.Instantiate(_arrowMesh);
-
-                forceMaker.name = "externalTorque" + markerID.ToString();
-                forceMaker.tag = VisualTag.Both;
-                forceMaker.transform.SetParent(_contactForcesRoot.transform, true);
-                forceMaker.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-
-                _objectController.SetContactForceMarker(
-                    forceMaker, new Vector3(0,0,0), new Vector3(1,1,1), Color.yellow,
-                    _contactForceMarkerScale);
-
-                _nCreatedArrowsForExternalTorque = markerID+1;
-            }
-            
-            for (ulong i = ExternalTorqueN; i < _nCreatedArrowsForExternalTorque; i++)
-            {
-                var forceMaker = _contactForcesRoot.transform.Find("externalTorque" + i.ToString()).gameObject;
-                forceMaker.SetActive(false);
-            }
-
             for (ulong i = 0; i < ExternalTorqueN; i++)
             {
                 double posX = _tcpHelper.GetDataDouble();
@@ -1270,13 +1198,15 @@ namespace raisimUnity
             
             for (ulong i = 0; i < ExternalTorqueN; i++)
             {
-                var forceMaker = _contactForcesRoot.transform.Find("externalTorque" + i.ToString()).gameObject;
+                var forceMarker = _externalTorqueMeshPool.AddMesh();
                 var contact = externalTorqueList[(int) i];
                 _objectController.SetContactForceMarker(
-                    forceMaker, contact.Item1, contact.Item2 / forceMaxNorm, Color.yellow,
+                    forceMarker, contact.Item1, contact.Item2 / forceMaxNorm, Color.yellow,
                     _contactForceMarkerScale);
-                forceMaker.SetActive(true);
+                forceMarker.SetActive(true);
             }
+
+            _externalTorqueMeshPool.AllSet();
 
             // Update object position done.
             // Go to visual object position update
@@ -1324,29 +1254,6 @@ namespace raisimUnity
             // create contact marker
             List<Tuple<Vector3, Vector3>> contactList = new List<Tuple<Vector3, Vector3>>();
             float forceMaxNorm = 0;
-            
-            for (ulong markerID = _nCreatedArrowsForContactForce; markerID < numContacts; markerID++)
-            {
-                var forceMaker = GameObject.Instantiate(_arrowMesh);
-                var posMarker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-
-                forceMaker.name = "contactForce" + markerID.ToString();
-                posMarker.name = "contactPosition" + markerID.ToString();
-                forceMaker.tag = VisualTag.Both;
-                posMarker.tag = VisualTag.Both;
-                forceMaker.transform.SetParent(_contactForcesRoot.transform, true);
-                posMarker.transform.SetParent(_contactPointsRoot.transform, true);
-                forceMaker.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                posMarker.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
-                
-                _objectController.SetContactMarker(
-                    posMarker, new Vector3(0,0,0), Color.red, _contactPointMarkerScale);
-                _objectController.SetContactForceMarker(
-                    forceMaker, new Vector3(0,0,0), new Vector3(1,1,1), Color.blue,
-                    _contactForceMarkerScale);
-
-                _nCreatedArrowsForContactForce = markerID+1;
-            }
 
             for (ulong i = 0; i < numContacts; i++)
             {
@@ -1368,8 +1275,8 @@ namespace raisimUnity
             
             for (ulong i = 0; i < numContacts; i++)
             {
-                var forceMaker = _contactForcesRoot.transform.Find("contactForce" + i.ToString()).gameObject;
-                var posMarker = _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject;
+                var forceMaker = _contactForceMeshPool.AddMesh();
+                var posMarker = _contactPointMeshPool.AddMesh();
                 
                 var contact = contactList[(int) i];
 
@@ -1397,59 +1304,9 @@ namespace raisimUnity
                 }
             }
             
-            for (ulong i = numContacts; i < _nCreatedArrowsForContactForce; i++)
-            {
-                var forceMaker = _contactForcesRoot.transform.Find("contactForce" + i.ToString()).gameObject;
-                forceMaker.SetActive(false);
-                var posMarker = _contactPointsRoot.transform.Find("contactPosition" + i.ToString()).gameObject;
-                posMarker.SetActive(false);
-            }
-            
             return true;
         }
         
-        private void ReadXmlString()
-        {
-            _tcpHelper.WriteData(BitConverter.GetBytes((int) ClientMessageType.RequestConfigXML));
-            if (_tcpHelper.ReadData() <= 0)
-                new RsuException("Cannot read data from TCP");
-            
-            ServerStatus state = _tcpHelper.GetDataServerStatus();
-            
-            if (state == ServerStatus.StatusTerminating)
-                new RsuException("The server is terminating");
-            else if (state == ServerStatus.StatusHibernating)
-            {
-                _clientStatus = ClientStatus.Idle;
-                return;
-            }
-            processServerRequest();
-
-            ServerMessageType messageType = _tcpHelper.GetDataServerMessageType();
-            
-            //TODO: properly use xml file here
-            if (messageType == ServerMessageType.NoMessage) return; // No XML
-                
-            if (messageType != ServerMessageType.ConfigXml)
-            {
-                new RsuException("The server sends a wrong message");
-            }
-
-            string xmlString = _tcpHelper.GetDataString();
-
-            XmlDocument xmlDoc = new XmlDocument();
-            if (xmlDoc != null)
-            {
-                xmlDoc.LoadXml(xmlString);
-                _xmlReader.CreateApperanceMap(xmlDoc);
-
-                XmlNode cameraNode = xmlDoc.DocumentElement.SelectSingleNode("/raisim/camera");
-                
-                if(cameraNode != null)
-                    _camera.Follow(cameraNode.Attributes["follow"].Value, XmlReader.GetXyzVector3(cameraNode));
-            }
-        }
-
         public string GetSubName(string name)
         {
             if (_objName.ContainsKey(name))
