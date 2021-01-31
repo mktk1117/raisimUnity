@@ -46,7 +46,7 @@ public class MeshPool
 
     public void AllSet()
     {
-        for (int i = _index + 1; i < _size; i++)
+        for (int i = _index; i < _size; i++)
         {
             var go = _root.transform.Find(_name + i.ToString()).gameObject;
             go.SetActive(false);

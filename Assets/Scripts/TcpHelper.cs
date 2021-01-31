@@ -176,7 +176,6 @@ namespace raisimUnity
         
         public int ReadData()
         {
-
             GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState("TcpHelper/ReadData");
 
             // Clear buffer first

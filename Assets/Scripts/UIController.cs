@@ -74,14 +74,6 @@ namespace raisimUnity
             if (_uiState == UiState.ARTICULATED_SYSTEM_SELECTED)
             {
                 _asUi.enabled = true;
-                Text name_asset = Resources.Load<Text> ("menu_prefab/_as_name");
-                var name = Instantiate (name_asset, GameObject.Find("_AsDescription").transform);
-                name.name = "as_name";
-                name.text = _remote._articulatedSystem.name;
-                var sub_name = Instantiate (name_asset, GameObject.Find("_AsDescription").transform);
-                sub_name.name = "sub_name";
-                sub_name.text = "real";
-                sub_name.transform.position = name.transform.position + new Vector3(0,-15,0);
             }
             else if (_uiState == UiState.SINGLE_BODY_SELECTED)
             {

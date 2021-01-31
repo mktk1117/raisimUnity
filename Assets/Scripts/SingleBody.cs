@@ -20,4 +20,9 @@ public class SingleBody
         angVel = new Vector3(0, 0, 0);
         quat = new Vector4(1, 0, 0, 0);
     }
+
+    public void UpdateGui()
+    {
+        
+    }
 }

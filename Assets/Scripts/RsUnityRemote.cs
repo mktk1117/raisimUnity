@@ -1216,6 +1216,7 @@ namespace raisimUnity
 
             if (objType == 0)
             {
+                _singleBody.name = _objName[objSelectedId.ToString()];
                 float posX = _tcpHelper.GetDataFloat();
                 float posY = _tcpHelper.GetDataFloat();
                 float posZ = _tcpHelper.GetDataFloat();
@@ -1236,14 +1237,23 @@ namespace raisimUnity
                 
                 _singleBody.linVel = new Vector3(linVelX, linVelY, linVelZ);
                 _singleBody.angVel = new Vector3(anglVelX, anglVelY, anglVelZ);
+                
+                _singleBody.UpdateGui();
             }
             else if (objType == 1)
             {
+                _articulatedSystem.name = _objName[objSelectedId.ToString()];
                 int gcDim = _tcpHelper.GetDataInt();
                 int gvDim = _tcpHelper.GetDataInt();
+                int jointSize = _tcpHelper.GetDataInt();
                 int frameSize = _tcpHelper.GetDataInt();
+                bool reset = objSelectedId != _articulatedSystem.objId;
 
-                _articulatedSystem.ResetIfDifferent(objSelectedId, gcDim, gvDim);
+                if (reset)
+                {
+                    _articulatedSystem.Reset(objSelectedId, gcDim, gvDim, frameSize, jointSize);    
+                }
+                
                 for (int i = 0; i < gcDim; i++)
                 {
                     _articulatedSystem.gc[i] = _tcpHelper.GetDataFloat();
@@ -1254,12 +1264,24 @@ namespace raisimUnity
                     _articulatedSystem.gv[i] = _tcpHelper.GetDataFloat();
                 }
                 
+                for (int i = 0; i < jointSize; i++)
+                {
+                    string jointName = _tcpHelper.GetDataString();
+                    if (reset)
+                    {
+                        _articulatedSystem.jointNames[i] = jointName;
+                        _articulatedSystem.jointNames[i] += ":";
+                        _articulatedSystem.jointNames[i].PadRight(25);
+                    }
+                        
+                }
+                
                 for (int i = 0; i < frameSize; i++)
                 {
                     String frameName = _tcpHelper.GetDataString();
-                    String frameType
-                    _articulatedSystem.frameNames[i] = _tcpHelper.GetDataString();
-                    _articulatedSystem.frameType[i] = _tcpHelper.GetDataInt();
+
+                    if (reset)
+                        _articulatedSystem.frameNames[i] = frameName;
                     
                     float posX = _tcpHelper.GetDataFloat();
                     float posY = _tcpHelper.GetDataFloat();
@@ -1269,9 +1291,10 @@ namespace raisimUnity
                     float quatY = _tcpHelper.GetDataFloat();
                     float quatZ = _tcpHelper.GetDataFloat();
 
-                    _articulatedSystem.frames[i].transform.position = new Vector3(posX, posY, posZ);
-                    _articulatedSystem.frames[i].transform.rotation = new Quaternion(quatX, quatY, quatZ, quatW);
+                    _articulatedSystem.framesPos[i] = new Vector3(posX, posY, posZ);
+                    _articulatedSystem.framesQuat[i] = new Quaternion(quatX, quatY, quatZ, quatW);
                 }
+                _articulatedSystem.updateGui();
             }
 
             // Update object position done.
@@ -1292,12 +1315,9 @@ namespace raisimUnity
                 if (_camera._selected)
                 {
                     var nameSplited = _camera._selected.name.Split('/').ToList();
-                    int objId = -1;
-                    if (nameSplited.Count > 0)
-                    {
-                        objId = Int32.Parse(nameSplited[0]);
-                        _tcpHelper.SetDataInt(objId);
-                    }
+                    int objId;
+                    objId = Int32.Parse(nameSplited[0]);
+                    _tcpHelper.SetDataInt(objId);
                 }
                 else
                 {
@@ -1362,7 +1382,7 @@ namespace raisimUnity
                 
                 var contact = contactList[(int) i];
 
-                if (contact.Item2.magnitude > 0)
+                if (contact.Item2.magnitude > 1e-8)
                 {
                     if (_showContactPoints)
                     {
@@ -1385,7 +1405,6 @@ namespace raisimUnity
                     posMarker.SetActive(false);
                 }
             }
-            
             return true;
         }
         

@@ -40,7 +40,7 @@ namespace raisimUnity
         }
         
         public RsuException(Exception ex, String message) {
-            throw new Exception(message + "\n" + ex.Message);
+            throw new Exception(message + "\n" + ex.Message + "\n" + ex.StackTrace);
         }
     }
 }
