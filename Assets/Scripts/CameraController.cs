@@ -301,10 +301,20 @@ public class CameraController : MonoBehaviour
                     {
                         var nameSplited = _selected.name.Split('/').ToList();
                         String name = _remote._objName[nameSplited[0]];
+                        _remote.objSelectedId = Int32.Parse(nameSplited[0]);
+                        
+                        if (nameSplited.Count > 1)
+                        {
+                            _remote._articulatedSystem.name = name;
+                            _remote._articulatedSystem.objId = Int32.Parse(nameSplited[0]);
+                        }
+                        else
+                        {
+                            _remote._singleBody.name = name;
+                            _remote._singleBody.objId = Int32.Parse(nameSplited[0]);
+                        }
                         GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().value =
                             GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().options.FindIndex(x => x.text == name);
-                        
-                        
                     }
                     _toFollow = "";
                 }

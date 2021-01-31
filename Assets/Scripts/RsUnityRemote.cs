@@ -177,6 +177,7 @@ namespace raisimUnity
         private MeshPool _polylineMeshPool;
         
         // controlled objects
+        public int objSelectedId = -1;
         public ArticulatedSystem _articulatedSystem;
         public SingleBody _singleBody;
 
@@ -249,6 +250,9 @@ namespace raisimUnity
             _externalForceMeshPool = new MeshPool("externalForce", _arrowMesh, _contactForcesRoot, VisualTag.Both, _standardShader);
             _externalTorqueMeshPool = new MeshPool("externalTorque", _arrowMesh, _contactForcesRoot, VisualTag.Both, _standardShader);
             _polylineMeshPool = new MeshPool("polyline", GameObject.CreatePrimitive(PrimitiveType.Cube), _polylineRoot, VisualTag.Both, _standardShader);
+
+            _articulatedSystem = new ArticulatedSystem();
+            _singleBody = new SingleBody();
         }
 
         public void EstablishConnection(int waitTime=1000)
@@ -1202,8 +1206,73 @@ namespace raisimUnity
                     _contactForceMarkerScale);
                 forceMarker.SetActive(true);
             }
-
             _externalTorqueMeshPool.AllSet();
+            
+            // get object details
+            // objType == 0: SingleBody
+            // objType == 1: ArticulatedSystem
+            // objType == -1: None
+            int objType = _tcpHelper.GetDataInt();
+
+            if (objType == 0)
+            {
+                float posX = _tcpHelper.GetDataFloat();
+                float posY = _tcpHelper.GetDataFloat();
+                float posZ = _tcpHelper.GetDataFloat();
+                float quatW = _tcpHelper.GetDataFloat();
+                float quatX = _tcpHelper.GetDataFloat();
+                float quatY = _tcpHelper.GetDataFloat();
+                float quatZ = _tcpHelper.GetDataFloat();
+                
+                _singleBody.position = new Vector3(posX, posY, posZ);
+                _singleBody.quat = new Vector4(quatW, quatX, quatY, quatZ);
+                
+                float linVelX = _tcpHelper.GetDataFloat();
+                float linVelY = _tcpHelper.GetDataFloat();
+                float linVelZ = _tcpHelper.GetDataFloat();
+                float anglVelX = _tcpHelper.GetDataFloat();
+                float anglVelY = _tcpHelper.GetDataFloat();
+                float anglVelZ = _tcpHelper.GetDataFloat();
+                
+                _singleBody.linVel = new Vector3(linVelX, linVelY, linVelZ);
+                _singleBody.angVel = new Vector3(anglVelX, anglVelY, anglVelZ);
+            }
+            else if (objType == 1)
+            {
+                int gcDim = _tcpHelper.GetDataInt();
+                int gvDim = _tcpHelper.GetDataInt();
+                int frameSize = _tcpHelper.GetDataInt();
+
+                _articulatedSystem.ResetIfDifferent(objSelectedId, gcDim, gvDim);
+                for (int i = 0; i < gcDim; i++)
+                {
+                    _articulatedSystem.gc[i] = _tcpHelper.GetDataFloat();
+                }
+                
+                for (int i = 0; i < gvDim; i++)
+                {
+                    _articulatedSystem.gv[i] = _tcpHelper.GetDataFloat();
+                }
+                
+                for (int i = 0; i < frameSize; i++)
+                {
+                    String frameName = _tcpHelper.GetDataString();
+                    String frameType
+                    _articulatedSystem.frameNames[i] = _tcpHelper.GetDataString();
+                    _articulatedSystem.frameType[i] = _tcpHelper.GetDataInt();
+                    
+                    float posX = _tcpHelper.GetDataFloat();
+                    float posY = _tcpHelper.GetDataFloat();
+                    float posZ = _tcpHelper.GetDataFloat();
+                    float quatW = _tcpHelper.GetDataFloat();
+                    float quatX = _tcpHelper.GetDataFloat();
+                    float quatY = _tcpHelper.GetDataFloat();
+                    float quatZ = _tcpHelper.GetDataFloat();
+
+                    _articulatedSystem.frames[i].transform.position = new Vector3(posX, posY, posZ);
+                    _articulatedSystem.frames[i].transform.rotation = new Quaternion(quatX, quatY, quatZ, quatW);
+                }
+            }
 
             // Update object position done.
             // Go to visual object position update
@@ -1230,7 +1299,10 @@ namespace raisimUnity
                         _tcpHelper.SetDataInt(objId);
                     }
                 }
-                _tcpHelper.SetDataInt(-1);
+                else
+                {
+                    _tcpHelper.SetDataInt(-1);    
+                }
                 _tcpHelper.WriteData();
                 receivedData = _tcpHelper.ReadData();
             }

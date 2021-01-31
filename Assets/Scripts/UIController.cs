@@ -76,7 +76,8 @@ namespace raisimUnity
                 _asUi.enabled = true;
                 Text name_asset = Resources.Load<Text> ("menu_prefab/_as_name");
                 var name = Instantiate (name_asset, GameObject.Find("_AsDescription").transform);
-                name.name = _remote._articulatedSystem.name;
+                name.name = "as_name";
+                name.text = _remote._articulatedSystem.name;
                 var sub_name = Instantiate (name_asset, GameObject.Find("_AsDescription").transform);
                 sub_name.name = "sub_name";
                 sub_name.text = "real";
