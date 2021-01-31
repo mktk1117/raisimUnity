@@ -22,10 +22,12 @@
  * SOFTWARE.
  */
 
+using System;
+
 namespace raisimUnity
 {
     // socket commands from client
-    public enum ServerMessageType : int
+    public enum ServerMessageType : Int32
     {
         Initialization = 0,
         ObjectPositionUpdate,
@@ -38,7 +40,7 @@ namespace raisimUnity
         Reset,
     }
 
-    enum ClientMessageType : int
+    enum ClientMessageType : Int32
     {    
         RequestObjectPosition = 0,
         RequestInitializeObjects,
@@ -54,7 +56,7 @@ namespace raisimUnity
         RequestServerStatus,
     }
 
-    public enum ServerStatus : int
+    public enum ServerStatus : Int32
     {
         StatusRendering = 0,
         StatusHibernating,

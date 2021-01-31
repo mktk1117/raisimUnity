@@ -38,6 +38,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.UI;
 
+
 [RequireComponent(typeof(Camera))]
 public class CameraController : MonoBehaviour
 {
@@ -53,7 +54,7 @@ public class CameraController : MonoBehaviour
     private int _cursorStaticCount = 0;
 
     // object selection
-    private GameObject _selected; 
+    public GameObject _selected; 
 
     // video recording
     private bool _isRecording = false;
@@ -99,7 +100,7 @@ public class CameraController : MonoBehaviour
     private const string _ErrorModalViewName = "_CanvasModalViewError";
     private ErrorViewController _errorModalView;
     private GameObject _sidebar;
-    private GameObject _helpUI;
+    private UIController _uiController; 
 
     private Vector3 targetPos;
     private Vector3 currentPos;
@@ -154,9 +155,9 @@ public class CameraController : MonoBehaviour
             Directory.CreateDirectory(_dirPath);
         
         _sidebar = GameObject.Find("_CanvasSidebar");
-        _helpUI = GameObject.Find("_CanvasHelpUI");
         GameObject.Find("_CanvasSidebar").GetComponent<Canvas>().enabled = true;
         _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
+        _uiController = GameObject.Find("_CanvasSidebar").GetComponent<UIController>();
         
         // Set target frame rate (optional)
         _relativePositionB = new Vector3(1.0f,1.0f,-1.0f);
@@ -229,11 +230,20 @@ public class CameraController : MonoBehaviour
     void Update() {
         if (!string.IsNullOrEmpty(_toFollow))
         {
-            _selected = GameObject.Find(_remote.GetSubName(_toFollow));
+            var myKey = _remote._objName.FirstOrDefault(x => x.Value == _toFollow).Key;
+            _selected = GameObject.Find(myKey);
+            if (!_selected)
+            {
+                _selected = GameObject.Find(myKey+"/0");
+                if (!_selected)
+                {
+                    _selected = GameObject.Find(myKey+"/0/0");
+                }
+            }
         }
         
         // move by keyboard
-        if (_selected == null)
+        if (_selected)
         {
             Vector3 move = Vector3.zero;
             if (Input.GetKey(KeyCode.W))
@@ -286,6 +296,16 @@ public class CameraController : MonoBehaviour
                 {
                     // Set selected object
                     _selected = hit.transform.parent.gameObject;
+
+                    if (_selected)
+                    {
+                        var nameSplited = _selected.name.Split('/').ToList();
+                        String name = _remote._objName[nameSplited[0]];
+                        GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().value =
+                            GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().options.FindIndex(x => x.text == name);
+                        
+                        
+                    }
                     _toFollow = "";
                 }
             }
@@ -345,7 +365,7 @@ public class CameraController : MonoBehaviour
         }
         
         // Follow and orbiting around selected object  
-        if (_selected != null)
+        if (_selected)
         {
             targetPos = _selected.transform.position + _relativePositionB;
             currentPos = 0.3f * targetPos + 0.7f * transform.position;
@@ -353,8 +373,27 @@ public class CameraController : MonoBehaviour
             transform.position = currentPos;
             transform.transform.LookAt(_selected.transform.position);
         }
+
+        /// set the ui state depending on the object selected
+        if (_selected)
+        {
+            var nameSplited = _selected.name.Split('/').ToList();
+            if (nameSplited.Count > 1)
+            {
+                _uiController.setUiState(UiState.ARTICULATED_SYSTEM_SELECTED);
+            }
+            else
+            {
+                _uiController.setUiState(UiState.SINGLE_BODY_SELECTED);
+            }
+        }
+        else
+        {
+            _uiController.setUiState(UiState.NOTHING_SELECTED);
+        }
+        
         var halfspace = GameObject.Find("halfspace_viz");
-        if (halfspace != null)
+        if (halfspace)
         {
             GameObject.Find("Planar Reflection").GetComponent<PlanarReflectionProbe>().enabled = true;
             var position = transform.position;

@@ -175,6 +175,10 @@ namespace raisimUnity
         private MeshPool _externalForceMeshPool;
         private MeshPool _externalTorqueMeshPool;
         private MeshPool _polylineMeshPool;
+        
+        // controlled objects
+        public ArticulatedSystem _articulatedSystem;
+        public SingleBody _singleBody;
 
         void Start()
         {
@@ -211,13 +215,6 @@ namespace raisimUnity
                 _skyNames.Add("sky6"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky6/sky6"));
                 _skyNames.Add("sky7"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky7/sky7"));
                 _skyNames.Add("sky8"); _skyCubemaps.Add(Resources.Load<Cubemap>("AllSkyFree/sky8/sky8"));
-
-                //Cubemap sky1 = Resources.Load<Cubemap>("AllSkyFree/sky2/sky2");
-                //GameObject volume = GameObject.Find("Sky");
-                //HDRISky sky;
-                //volume.GetComponent<Volume>().profile.TryGet<HDRISky>(out sky);
-                //sky.hdriSky.value = sky1;
-                //GameObject.Find("Sky").GetComponent<HDRISky>().hdriSky.value = sky1;
             }
             else
             {
@@ -377,7 +374,7 @@ namespace raisimUnity
                                         ShowOrHideObjects();
                                         _loadingModalView.Show(false);
                                         GameObject.Find("_CanvasSidebar").GetComponent<UIController>().ConstructLookAt();
-                                     }
+                                    }
                                 }
                             } catch (Exception e)
                             {
@@ -613,7 +610,7 @@ namespace raisimUnity
                 string name = _tcpHelper.GetDataString();
                 if (name != "" && !_objName.ContainsKey(name))
                 {
-                    _objName.Add(name, objectIndex.ToString() + "/0/0");    
+                    _objName.Add(objectIndex.ToString(),name);    
                 }
                 
                 if (objectType == RsObejctType.RsArticulatedSystemObject)
@@ -1221,7 +1218,20 @@ namespace raisimUnity
             int receivedData = 0;
             while (counter++ < 1 && receivedData == 0)
             {
-                _tcpHelper.WriteData(BitConverter.GetBytes((int) type));
+                _tcpHelper.SetDataInt((int)type);
+                
+                if (_camera._selected)
+                {
+                    var nameSplited = _camera._selected.name.Split('/').ToList();
+                    int objId = -1;
+                    if (nameSplited.Count > 0)
+                    {
+                        objId = Int32.Parse(nameSplited[0]);
+                        _tcpHelper.SetDataInt(objId);
+                    }
+                }
+                _tcpHelper.SetDataInt(-1);
+                _tcpHelper.WriteData();
                 receivedData = _tcpHelper.ReadData();
             }
 
@@ -1307,20 +1317,6 @@ namespace raisimUnity
             return true;
         }
         
-        public string GetSubName(string name)
-        {
-            if (_objName.ContainsKey(name))
-                return _objName[name];
-            
-            if (_objName.ContainsKey(name+"/0"))
-                return _objName[name+"/0"];
-            
-            if (_objName.ContainsKey(name+"/0/0"))
-                return _objName[name+"/0/0"];
-
-            return "";
-        }
-
         void OnApplicationQuit()
         {
             // close tcp client

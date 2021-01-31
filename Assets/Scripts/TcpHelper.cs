@@ -47,7 +47,9 @@ namespace raisimUnity
         
         // Buffer
         private byte[] _buffer;
+        private byte[] _writeBuffer;
         private int _bufferOffset = 0;
+        private int _writeBufferOffset = 0;
         
         // Read data timer
         private float readDataTime = 0;
@@ -68,6 +70,7 @@ namespace raisimUnity
             _tcpAddress = "127.0.0.1";
             _tcpPort = 8080;
             _buffer = new byte[MaxBufferSize];
+            _writeBuffer = new byte[MaxBufferSize];
         }
 
         public void Flush()
@@ -218,18 +221,10 @@ namespace raisimUnity
             return numBytes;
         }
 
-        public int WriteData(Byte[] data)
+        public void WriteData()
         {
-            GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setState("TcpHelper/WriteData");
-
-            while (!_stream.CanWrite)
-            {
-                // wait until stream can write
-                // TODO what to do when it is stucked here....
-            }
-            
-            _stream.Write(data, 0, data.Length);
-            return 0;
+            _stream.Write(_writeBuffer, 0, _writeBufferOffset);
+            _writeBufferOffset = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -314,6 +309,14 @@ namespace raisimUnity
             var data = BitConverter.ToInt32(_buffer, _bufferOffset).As<int>();
             _bufferOffset = _bufferOffset + sizeof(int);
             return data;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetDataInt(int data)
+        {
+            var data_in_bytes = BitConverter.GetBytes(data);
+            Buffer.BlockCopy(data_in_bytes, 0, _writeBuffer, _writeBufferOffset, data_in_bytes.Length);
+            _writeBufferOffset = _writeBufferOffset + sizeof(int);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

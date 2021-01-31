@@ -38,6 +38,13 @@ using UnityEngine.Rendering;
 
 namespace raisimUnity
 {
+    public enum UiState
+    {
+        NOTHING_SELECTED = 0,
+        ARTICULATED_SYSTEM_SELECTED,
+        SINGLE_BODY_SELECTED
+    }
+    
     public class UIController : MonoBehaviour
     {
         private RsUnityRemote _remote = null;
@@ -49,6 +56,42 @@ namespace raisimUnity
         private string _state = null;
         private string _errorMsg = "";
         private int _errorCount = 0;
+        
+        // UI STATUS
+        private UiState _uiState = UiState.NOTHING_SELECTED;
+        public UiState getUiState()
+        {
+            return _uiState;
+        }
+        public void setUiState(UiState state)
+        {
+            if (_uiState == state)
+                return;
+
+            _uiState = state;
+            
+            // change uiState
+            if (_uiState == UiState.ARTICULATED_SYSTEM_SELECTED)
+            {
+                _asUi.enabled = true;
+                Text name_asset = Resources.Load<Text> ("menu_prefab/_as_name");
+                var name = Instantiate (name_asset, GameObject.Find("_AsDescription").transform);
+                name.name = _remote._articulatedSystem.name;
+                var sub_name = Instantiate (name_asset, GameObject.Find("_AsDescription").transform);
+                sub_name.name = "sub_name";
+                sub_name.text = "real";
+                sub_name.transform.position = name.transform.position + new Vector3(0,-15,0);
+            }
+            else if (_uiState == UiState.SINGLE_BODY_SELECTED)
+            {
+                _asUi.enabled = false;
+            }
+            else
+            {
+                _asUi.enabled = false;
+            }
+        }
+
         
         // UI element names
         // Buttons
@@ -89,12 +132,20 @@ namespace raisimUnity
 
         private TextBox _errorTextBox;
         private TextBox _statusTextBox;
+
+        private Canvas _basicUi;
+        private Canvas _asUi;
+        private Canvas _sbUi;
         
         private void Start()
         {
             _remote = GameObject.Find("RaiSimUnity").GetComponent<RsUnityRemote>();
             _camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
             _error = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
+
+            _basicUi = GameObject.Find("_CanvasSidebar").GetComponent<Canvas>();
+            _asUi = GameObject.Find("_articulatedSystemCanvas").GetComponent<Canvas>();
+            // _sbUi = GameObject.Find("_CanvasSidebar").GetComponent<Canvas>();
 
             if (_remote == null)
             {
@@ -128,8 +179,7 @@ namespace raisimUnity
                     _remote.ShowCollisionBody = isSelected;
                     _remote.ShowOrHideObjects();
                 });
-                
-                
+
                 var sliderContactPoints = GameObject.Find(_SliderContactPointsName).GetComponent<Slider>();
                 sliderContactPoints.onValueChanged.AddListener((value) => { _remote.ContactPointMarkerScale = value; });
                 var toggleContactPoints = GameObject.Find(_ToggleContactPointsName).GetComponent<Toggle>();
@@ -351,10 +401,10 @@ namespace raisimUnity
         public void ConstructLookAt()
         {
             var LookAtDropdown = GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>();
-            _lookAtOptions = new List<string> ();
+            _lookAtOptions = new List<String> ();
             _lookAtOptions.Add("Free Cam");
             foreach (var option in _remote._objName) {
-                _lookAtOptions.Add(option.Key); // Or whatever you want for a label
+                _lookAtOptions.Add(option.Value); // Or whatever you want for a label
             }
             
             LookAtDropdown.ClearOptions ();
@@ -365,9 +415,11 @@ namespace raisimUnity
             });
         }
         
+        
         // GUI
         void OnGUI()
         {
+          
             // Set style once
             if (_style == null)
             {
