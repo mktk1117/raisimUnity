@@ -27,7 +27,7 @@ public class MeshPool
         if (_index == _size)
         {
             GameObject go = GameObject.Instantiate(_mesh);
-            go.name = _name + _index.ToString();
+            go.name = _name + _index;
             go.tag = _tag;
             go.transform.SetParent(_root.transform, true);
             go.GetComponentInChildren<MeshRenderer>().material.shader = _standardShader;
@@ -40,6 +40,7 @@ public class MeshPool
         {
             GameObject go = _root.transform.Find(_name + _index.ToString()).gameObject;
             _index++;
+            go.SetActive(true);
             return go;
         }
     }

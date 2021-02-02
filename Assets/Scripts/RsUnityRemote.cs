@@ -251,8 +251,8 @@ namespace raisimUnity
             _externalTorqueMeshPool = new MeshPool("externalTorque", _arrowMesh, _contactForcesRoot, VisualTag.Both, _standardShader);
             _polylineMeshPool = new MeshPool("polyline", GameObject.CreatePrimitive(PrimitiveType.Cube), _polylineRoot, VisualTag.Both, _standardShader);
 
-            _articulatedSystem = new ArticulatedSystem();
-            _singleBody = new SingleBody();
+            _articulatedSystem = new ArticulatedSystem(_standardShader);
+            _singleBody = new SingleBody(_standardShader);
         }
 
         public void EstablishConnection(int waitTime=1000)
@@ -487,6 +487,8 @@ namespace raisimUnity
             _externalForceMeshPool.Clear();
             _externalTorqueMeshPool.Clear();
             _polylineMeshPool.Clear();
+            _articulatedSystem.Clear();
+            _singleBody.Clear();
 
             // visuals
             foreach (Transform child in _visualsRoot.transform)
@@ -612,9 +614,13 @@ namespace raisimUnity
                 
                 // get name and find corresponding appearance from XML
                 string name = _tcpHelper.GetDataString();
-                if (name != "" && !_objName.ContainsKey(name))
+                if (name != "")
                 {
                     _objName.Add(objectIndex.ToString(),name);    
+                }
+                else
+                {
+                    _objName.Add(objectIndex.ToString(),objectIndex.ToString());
                 }
                 
                 if (objectType == RsObejctType.RsArticulatedSystemObject)
@@ -1226,7 +1232,7 @@ namespace raisimUnity
                 float quatZ = _tcpHelper.GetDataFloat();
                 
                 _singleBody.position = new Vector3(posX, posY, posZ);
-                _singleBody.quat = new Vector4(quatW, quatX, quatY, quatZ);
+                _singleBody.quat = new Quaternion(quatX, quatY, quatZ, quatW);
                 
                 float linVelX = _tcpHelper.GetDataFloat();
                 float linVelY = _tcpHelper.GetDataFloat();
@@ -1263,17 +1269,15 @@ namespace raisimUnity
                 {
                     _articulatedSystem.gv[i] = _tcpHelper.GetDataFloat();
                 }
-                
+
+                int jointIdx = 0;
                 for (int i = 0; i < jointSize; i++)
                 {
                     string jointName = _tcpHelper.GetDataString();
+                    _articulatedSystem.jointTypes[i] = _tcpHelper.GetDataInt();
+                    
                     if (reset)
-                    {
                         _articulatedSystem.jointNames[i] = jointName;
-                        _articulatedSystem.jointNames[i] += ":";
-                        _articulatedSystem.jointNames[i].PadRight(25);
-                    }
-                        
                 }
                 
                 for (int i = 0; i < frameSize; i++)
@@ -1312,12 +1316,20 @@ namespace raisimUnity
             {
                 _tcpHelper.SetDataInt((int)type);
                 
+
                 if (_camera._selected)
                 {
                     var nameSplited = _camera._selected.name.Split('/').ToList();
                     int objId;
-                    objId = Int32.Parse(nameSplited[0]);
-                    _tcpHelper.SetDataInt(objId);
+                    
+                    if (Int32.TryParse(nameSplited[0], out objId) && _objName.ContainsKey(objId.ToString()))
+                    {
+                        _tcpHelper.SetDataInt(objId);
+                    }
+                    else
+                    {
+                        _tcpHelper.SetDataInt(-1);
+                    }
                 }
                 else
                 {
@@ -1338,7 +1350,8 @@ namespace raisimUnity
                 new RsuException("Server is terminating");
                 return ServerMessageType.Reset;
             }
-            else if (state == ServerStatus.StatusHibernating)
+            
+            if (state == ServerStatus.StatusHibernating)
             {
                 return ServerMessageType.Reset;
             }
@@ -1507,9 +1520,11 @@ namespace raisimUnity
             set
             {
                 _bodyFrameMarkerScale = value;
-                foreach (var obj in GameObject.FindGameObjectsWithTag(VisualTag.Frame))
+                for (int i=0; i<_articulatedSystem._framRoot.transform.childCount; i++)
                 {
-                    obj.transform.localScale = new Vector3(0.03f * value, 0.03f * value, 0.1f * value);
+                    _articulatedSystem._framRoot.transform.GetChild(i).GetChild(0).localScale = new Vector3(value, value, value);
+                    _articulatedSystem._framRoot.transform.GetChild(i).GetChild(1).localScale = new Vector3(value, value, value);
+                    _articulatedSystem._framRoot.transform.GetChild(i).GetChild(2).localScale = new Vector3(value, value, value);
                 }
             }
         }

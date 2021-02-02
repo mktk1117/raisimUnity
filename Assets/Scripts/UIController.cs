@@ -74,13 +74,16 @@ namespace raisimUnity
             if (_uiState == UiState.ARTICULATED_SYSTEM_SELECTED)
             {
                 _asUi.enabled = true;
+                _sbUi.enabled = false;
             }
             else if (_uiState == UiState.SINGLE_BODY_SELECTED)
             {
+                _sbUi.enabled = true;
                 _asUi.enabled = false;
             }
             else
             {
+                _sbUi.enabled = false;
                 _asUi.enabled = false;
             }
         }
@@ -138,8 +141,9 @@ namespace raisimUnity
 
             _basicUi = GameObject.Find("_CanvasSidebar").GetComponent<Canvas>();
             _asUi = GameObject.Find("_articulatedSystemCanvas").GetComponent<Canvas>();
-            // _sbUi = GameObject.Find("_CanvasSidebar").GetComponent<Canvas>();
-
+            _asUi.enabled = false;
+            _sbUi = GameObject.Find("_SingleBodyCanvas").GetComponent<Canvas>();
+            _sbUi.enabled = false;
             if (_remote == null)
             {
                 // TODO exception

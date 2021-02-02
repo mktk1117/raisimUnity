@@ -243,7 +243,7 @@ public class CameraController : MonoBehaviour
         }
         
         // move by keyboard
-        if (_selected)
+        if (!_selected)
         {
             Vector3 move = Vector3.zero;
             if (Input.GetKey(KeyCode.W))
@@ -373,7 +373,7 @@ public class CameraController : MonoBehaviour
             GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().value =
                 GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().options.FindIndex(x => x.text == name);
             
-            if (nameSplited.Count > 1)
+            if (nameSplited.Count > 2)
             {
                 _uiController.setUiState(UiState.ARTICULATED_SYSTEM_SELECTED);
             }
