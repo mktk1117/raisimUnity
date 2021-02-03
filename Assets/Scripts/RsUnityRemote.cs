@@ -190,17 +190,11 @@ namespace raisimUnity
 
             File.WriteAllText(_errorLogFile, "error logs \n");
             _objectsRoot = new GameObject("_RsObjects");
-            _objectsRoot.transform.SetParent(transform);
             _objectCache = new GameObject("_ObjectCache");
-            _objectCache.transform.SetParent(transform);
             _visualsRoot = new GameObject("_VisualObjects");
-            _visualsRoot.transform.SetParent(transform);
             _contactPointsRoot = new GameObject("_ContactPoints");
-            _contactPointsRoot.transform.SetParent(transform);
             _polylineRoot = new GameObject("_polylineRoot");
-            _polylineRoot.transform.SetParent(transform);
             _contactForcesRoot = new GameObject("_ContactForces");
-            _contactForcesRoot.transform.SetParent(transform);
             _camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
             _arrowMesh = Resources.Load("others/arrow") as GameObject;
 
@@ -272,9 +266,12 @@ namespace raisimUnity
         void Update()
         {
             // Broken connection: clear
-            if(!_tcpHelper.CheckConnection())
+            if (!_tcpHelper.CheckConnection())
+            {
                 CloseConnection();
-     
+                EstablishConnection();
+            }
+
             // Data available: handle communication
             if (_tcpHelper.DataAvailable)
             {
@@ -291,6 +288,7 @@ namespace raisimUnity
                             {
                                 // Server hibernating
                                 CloseConnection();
+                                EstablishConnection();
                                 _clientStatus = ClientStatus.InitializingObjects;
                                 ReadAndCheckServer(ClientMessageType.RequestServerStatus);
                             }
@@ -424,7 +422,7 @@ namespace raisimUnity
                         file.WriteLine(e.ToString()+"\n \n");
                     }
                     GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setError(e.ToString());
-
+                    CloseConnection();
                     _clientStatus = ClientStatus.Idle;
                     // Close connection
                     ClearScene();
