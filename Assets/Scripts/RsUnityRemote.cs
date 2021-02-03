@@ -269,7 +269,6 @@ namespace raisimUnity
             if (!_tcpHelper.CheckConnection())
             {
                 CloseConnection();
-                EstablishConnection();
             }
 
             // Data available: handle communication
