@@ -40,7 +40,6 @@ namespace raisimUnity
 {
     enum ClientStatus : int
     {
-        Idle = 0,    // waiting for connection or server is hibernating
         InitializingObjects,
         UpdateObjectPosition,
     }
@@ -236,7 +235,6 @@ namespace raisimUnity
             // ui controller 
             // _errorModalView = GameObject.Find("_CanvasModalViewError").GetComponent<ErrorViewController>();
             _loadingModalView = GameObject.Find("_CanvasModalViewLoading").GetComponent<LoadingViewController>();
-            _clientStatus = ClientStatus.Idle;
 
             // mesh pools
             _contactForceMeshPool = new MeshPool("contactForce", _arrowMesh, _contactForcesRoot, VisualTag.Both, _standardShader);
@@ -257,10 +255,8 @@ namespace raisimUnity
 
         public void CloseConnection()
         {
-            ClearScene();
-            
+            ClearScene();            
             _tcpHelper.CloseConnection();
-            _clientStatus = ClientStatus.Idle;
         }
 
         void Update()
@@ -278,26 +274,6 @@ namespace raisimUnity
                 {
                     switch (_clientStatus)
                     {
-                        //**********************************************************************************************
-                        // Step 0
-                        //**********************************************************************************************
-                        case ClientStatus.Idle:
-                        {
-                            try
-                            {
-                                // Server hibernating
-                                CloseConnection();
-                                EstablishConnection();
-                                _clientStatus = ClientStatus.InitializingObjects;
-                                ReadAndCheckServer(ClientMessageType.RequestServerStatus);
-                            }
-                            catch (Exception e)
-                            {
-                                new RsuException(e, "RsUnityRemote: ClientStatus.Idle");
-                            }
-                            
-                            break;
-                        }
                         //**********************************************************************************************
                         // Step 1
                         //**********************************************************************************************
@@ -422,9 +398,8 @@ namespace raisimUnity
                     }
                     GameObject.Find("_CanvasSidebar").GetComponent<UIController>().setError(e.ToString());
                     CloseConnection();
-                    _clientStatus = ClientStatus.Idle;
-                    // Close connection
                     ClearScene();
+                    // Close connection
                 }
             }
         }
@@ -503,6 +478,8 @@ namespace raisimUnity
             
             // clear object cache
             _objName.Clear();
+            _initialization = true;
+
             
             // Resources.UnloadUnusedAssets();
         }
@@ -1542,14 +1519,6 @@ namespace raisimUnity
         public bool TcpConnected
         {
             get => _tcpHelper.Connected;
-        }
-
-        public bool IsServerHibernating
-        {
-            get
-            {
-                return _clientStatus == ClientStatus.Idle && _tcpHelper.DataAvailable;
-            }
         }
 
         public ResourceLoader ResourceLoader
