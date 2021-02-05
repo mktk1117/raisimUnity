@@ -295,7 +295,12 @@ public class CameraController : MonoBehaviour
                 if (Physics.Raycast(ray, out hit))
                 {
                     // Set selected object
+                    int objId;
                     _selected = hit.transform.parent.gameObject;
+                    while(_selected.transform.parent.name != "_RsObjects")
+                    {
+                        _selected = _selected.transform.parent.gameObject;
+                    }          
                     _toFollow = "";
                 }
             }
@@ -368,10 +373,16 @@ public class CameraController : MonoBehaviour
         if (_selected)
         {
             var nameSplited = _selected.name.Split('/').ToList();
-            String name = _remote._objName[nameSplited[0]];
-            _remote.objSelectedId = Int32.Parse(nameSplited[0]);
-            GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().value =
-                GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().options.FindIndex(x => x.text == name);
+            if(_remote._objName.ContainsKey(nameSplited[0]))
+            {
+                String name = _remote._objName[nameSplited[0]];
+                _remote.objSelectedId = Int32.Parse(nameSplited[0]);
+                GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().value =
+                    GameObject.Find("_LookAtDropDown").GetComponent<Dropdown>().options.FindIndex(x => x.text == name);
+            } else
+            {
+                _remote.objSelectedId = -1;
+            }
             
             if (nameSplited.Count > 2)
             {

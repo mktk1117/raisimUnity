@@ -654,7 +654,8 @@ namespace raisimUnity
                     }
                     else
                     {
-                        setColorFromString(gameObject, appearance);
+                        terrain.GetComponentInChildren<MeshRenderer>().material = _whiteMaterial;
+                        setColorFromString(terrain, appearance);
                     }
                 }
                 else if (objectType == RsObejctType.RsCompoundObject)
@@ -1196,7 +1197,8 @@ namespace raisimUnity
 
             if (objType == 0)
             {
-                _singleBody.name = _objName[objSelectedId.ToString()];
+                if(_objName.ContainsKey(objSelectedId.ToString()))
+                    _singleBody.name = _objName[objSelectedId.ToString()];
                 float posX = _tcpHelper.GetDataFloat();
                 float posY = _tcpHelper.GetDataFloat();
                 float posZ = _tcpHelper.GetDataFloat();
@@ -1222,17 +1224,14 @@ namespace raisimUnity
             }
             else if (objType == 1)
             {
-                _articulatedSystem.name = _objName[objSelectedId.ToString()];
+                if(_objName.ContainsKey(objSelectedId.ToString()))
+                    _articulatedSystem.name = _objName[objSelectedId.ToString()];
                 int gcDim = _tcpHelper.GetDataInt();
                 int gvDim = _tcpHelper.GetDataInt();
                 int jointSize = _tcpHelper.GetDataInt();
                 int frameSize = _tcpHelper.GetDataInt();
-                bool reset = objSelectedId != _articulatedSystem.objId;
 
-                if (reset)
-                {
-                    _articulatedSystem.Reset(objSelectedId, gcDim, gvDim, frameSize, jointSize);    
-                }
+                _articulatedSystem.Reset(objSelectedId, gcDim, gvDim, frameSize, jointSize);    
                 
                 for (int i = 0; i < gcDim; i++)
                 {
@@ -1248,18 +1247,15 @@ namespace raisimUnity
                 for (int i = 0; i < jointSize; i++)
                 {
                     string jointName = _tcpHelper.GetDataString();
-                    _articulatedSystem.jointTypes[i] = _tcpHelper.GetDataInt();
-                    
-                    if (reset)
-                        _articulatedSystem.jointNames[i] = jointName;
+                    _articulatedSystem.jointTypes[i] = _tcpHelper.GetDataInt();                    
+                    _articulatedSystem.jointNames[i] = jointName;
                 }
                 
                 for (int i = 0; i < frameSize; i++)
                 {
                     String frameName = _tcpHelper.GetDataString();
 
-                    if (reset)
-                        _articulatedSystem.frameNames[i] = frameName;
+                    _articulatedSystem.frameNames[i] = frameName;
                     
                     float posX = _tcpHelper.GetDataFloat();
                     float posY = _tcpHelper.GetDataFloat();

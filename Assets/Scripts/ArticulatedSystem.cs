@@ -67,29 +67,32 @@ public class ArticulatedSystem
             jointTypes = new int[joint_size];
         }
 
-        if (objId != newObjId)
+        if (_uiJoint.Length < gvDim)
         {
             for (int i = 0; i < _uiJoint.Length; i++)
                 GameObject.Destroy(_uiJoint[i]);
             
-            for (int i = 0; i < _uiFrame.Length; i++)
-                GameObject.Destroy(_uiFrame[i]);
-            
             _uiJoint = new GameObject[gvDim];
-            _uiFrame = new GameObject[frame_size];
 
             for (int i = 0; i < gvDim; i++)
             {
                 _uiJoint[i] = Object.Instantiate (_jointAsset, GameObject.Find("As_Content").transform);
                 _uiJoint[i].name = "joint " + i;
             }
+        }
+
+        if (frameSize < frame_size)
+        {
+            for (int i = 0; i < _uiFrame.Length; i++)
+                GameObject.Destroy(_uiFrame[i]);
+
+            _uiFrame = new GameObject[frame_size];
 
             for (int i = 0; i < frame_size; i++)
             {
                 _uiFrame[i] = Object.Instantiate (_frameAsset, GameObject.Find("As_Content").transform);
                 _uiFrame[i].name = "frame " + i;
             }
-
         }
         
         frameSize = frame_size;
@@ -129,7 +132,7 @@ public class ArticulatedSystem
         if (guiType == 0)
         {
             int gcIdx = 0, gvIdx = 0;
-            for (int i = 0; i < _uiJoint.Length; i++)
+            for (int i = 0; i < gv.Length; i++)
             {
                 _uiJoint[i].SetActive(true);
             }
