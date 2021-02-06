@@ -129,7 +129,7 @@ public class ArticulatedSystem
         if (guiType == 0)
         {
             int gcIdx = 0, gvIdx = 0;
-            for (int i = 0; i < jointSize; i++)
+            for (int i = 0; i < _uiJoint.Length; i++)
             {
                 _uiJoint[i].SetActive(true);
             }
