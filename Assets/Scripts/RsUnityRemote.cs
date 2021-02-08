@@ -1360,15 +1360,13 @@ namespace raisimUnity
             
             for (ulong i = 0; i < numContacts; i++)
             {
-                var forceMaker = _contactForceMeshPool.AddMesh();
-                var posMarker = _contactPointMeshPool.AddMesh();
-                
                 var contact = contactList[(int) i];
 
                 if (contact.Item2.magnitude > 1e-8)
                 {
                     if (_showContactPoints)
                     {
+                        var posMarker = _contactPointMeshPool.AddMesh();
                         _objectController.SetContactMarker(
                             posMarker, contact.Item1, Color.red, _contactPointMarkerScale);
                         posMarker.SetActive(true);
@@ -1376,16 +1374,12 @@ namespace raisimUnity
 
                     if (_showContactForces)
                     {
+                        var forceMaker = _contactForceMeshPool.AddMesh();
                         _objectController.SetContactForceMarker(
                             forceMaker, contact.Item1, contact.Item2 / forceMaxNorm, Color.blue,
                             _contactForceMarkerScale);
                         forceMaker.SetActive(true);
                     }
-                }
-                else
-                {
-                    forceMaker.SetActive(false);
-                    posMarker.SetActive(false);
                 }
             }
             return true;
